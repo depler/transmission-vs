@@ -1,7 +1,7 @@
 # Transmission daemon for Windows
 This project is about building Transmission torrent daemon as a single binary without dependencies with Visual Studio.
 
-Current components:
+Current source code components:
 * Transmission (https://github.com/transmission/transmission): 3.00 (bb6b5a062e)
 * OpenSSL (https://github.com/openssl/openssl): 1.1.1j
 * Curl (https://github.com/curl/curl): 7.76.0
