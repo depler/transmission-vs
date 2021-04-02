@@ -21,7 +21,6 @@ Clone current repository and build **transmission.sln** file with Visual Studio 
 Download latest **Transmission.zip** from releases, unpack it somewhere and run one of the following with administrator rights:
 * daemon_run.bat: run transmission daemon in console mode
 * daemon_install.bat: install transmission daemon as windows service and run it
-* daemon_install.bat: install transmission daemon as windows service and run it
 * web_install.bat: install web UI for transmission daemon (browse http://localhost:9091/transmission/web/)
 * desktop_shortcut.bat: create desktop shortcut for transgui.exe
 
