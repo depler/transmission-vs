@@ -78,7 +78,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Transmission Project"
-            VALUE "FileDescription", "Transmission Daemon"
+            VALUE "FileDescription", "https://github.com/depler/transmission"
             VALUE "FileVersion", "3.0.0.0"
             VALUE "InternalName", "transmission"
             VALUE "LegalCopyright", "2005 - 2021 Transmission Project"
