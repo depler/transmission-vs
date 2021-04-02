@@ -9,7 +9,7 @@ Current source code components:
 * Zlib (https://github.com/madler/zlib): 1.2.11
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.1.3
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.1.4
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
