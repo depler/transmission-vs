@@ -805,6 +805,9 @@
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="openssl\build.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

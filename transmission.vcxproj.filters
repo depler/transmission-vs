@@ -2155,4 +2155,9 @@
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="openssl\build.txt">
+      <Filter>openssl</Filter>
+    </Text>
+  </ItemGroup>
 </Project>
