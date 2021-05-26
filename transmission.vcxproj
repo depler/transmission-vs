@@ -166,6 +166,7 @@
     <ClCompile Include="curl\asyn-ares.c" />
     <ClCompile Include="curl\asyn-thread.c" />
     <ClCompile Include="curl\base64.c" />
+    <ClCompile Include="curl\bufref.c" />
     <ClCompile Include="curl\c-hyper.c" />
     <ClCompile Include="curl\conncache.c" />
     <ClCompile Include="curl\connect.c" />
@@ -461,6 +462,7 @@
     <ClInclude Include="curl\amigaos.h" />
     <ClInclude Include="curl\arpa_telnet.h" />
     <ClInclude Include="curl\asyn.h" />
+    <ClInclude Include="curl\bufref.h" />
     <ClInclude Include="curl\c-hyper.h" />
     <ClInclude Include="curl\config-win32.h" />
     <ClInclude Include="curl\conncache.h" />
@@ -807,6 +809,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="openssl\build.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
