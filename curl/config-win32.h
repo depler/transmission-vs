@@ -740,4 +740,8 @@ Vista
 #  define ENABLE_IPV6 1
 #endif
 
+#define USE_OPENSSL
+#define HAVE_ZLIB_H
+#define HAVE_LIBZ
+
 #endif /* HEADER_CURL_CONFIG_WIN32_H */
