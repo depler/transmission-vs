@@ -77,14 +77,10 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Transmission Project"
-            VALUE "FileDescription", "https://github.com/depler/transmission"
-            VALUE "FileVersion", "3.0.0.0"
-            VALUE "InternalName", "transmission"
-            VALUE "LegalCopyright", "2005 - 2021 Transmission Project"
-            VALUE "OriginalFilename", "transmission.exe"
             VALUE "ProductName", "Transmission"
-            VALUE "ProductVersion", "3.00 (bb6b5a062e)"
+            VALUE "ProductVersion", "2021-09-07"
+            VALUE "FileVersion", "3.0.0.0"
+            VALUE "LegalCopyright", "https://github.com/depler/transmission"
         END
     END
     BLOCK "VarFileInfo"
