@@ -66,6 +66,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>c:\Data\XSoft\Transmission\daemon\transmission.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
