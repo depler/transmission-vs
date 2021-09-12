@@ -842,6 +842,7 @@
     <ResourceCompile Include="transmission.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="fix.txt" />
     <Text Include="openssl\build.txt" />
   </ItemGroup>
   <ItemGroup>

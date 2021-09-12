@@ -144,6 +144,42 @@ static bool is_valid_path(char const* path)
     return strpbrk(path, "<>:\"|?*") == NULL;
 }
 
+static int fix_slashes(wchar_t* const wpath, int extra_chars_before, int extra_chars_after, int* real_result_size)
+{
+    wchar_t* p = wpath + extra_chars_before;
+    int wlen = (real_result_size == NULL) ? wcslen(p) - extra_chars_after : *real_result_size;
+
+    if (extra_chars_after > 0)
+        wmemset(p + wlen, 0, extra_chars_after);
+
+    int prev_slash = -2;
+    int extra_slash = 0;
+
+    for (int i = 0; i < wlen; i++, p++)
+    {
+        if (*p != L'/' && *p != L'\\')
+            continue;
+
+        if (i == prev_slash + 1)
+        {
+            int tail = wlen - i - 1;
+            wcsncpy(p, p + 1, tail);
+            p[tail] = L'\0';
+
+            wlen--; i--; p--;
+            extra_slash++;
+            continue;
+        }
+
+        if (*p == L'/')
+            *p = L'\\';
+
+        prev_slash = i;
+    }
+
+    return extra_slash;
+}
+
 static wchar_t* path_to_native_path_ex(char const* path, int extra_chars_after, int* real_result_size)
 {
     /* Extending maximum path length limit up to ~32K. See "Naming Files, Paths, and Namespaces"
@@ -181,16 +217,12 @@ static wchar_t* path_to_native_path_ex(char const* path, int extra_chars_after, 
         }
     }
 
-    /* Automatic '/' to '\' conversion is disabled for "\\?\"-prefixed paths */
-    wchar_t* p = wide_path + extra_chars_before;
-
-    while ((p = wcschr(p, L'/')) != NULL)
-    {
-        *p++ = L'\\';
-    }
+    //deduplication slashes with replacing
+    int extra_slashes = fix_slashes(wide_path, extra_chars_before, extra_chars_after, real_result_size);
 
     if (real_result_size != NULL)
     {
+        *real_result_size -= extra_slashes;
         *real_result_size += extra_chars_before;
     }
 

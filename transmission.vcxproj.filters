@@ -2267,6 +2267,7 @@
     <Text Include="openssl\build.txt">
       <Filter>openssl</Filter>
     </Text>
+    <Text Include="fix.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
