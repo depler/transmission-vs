@@ -31,4 +31,4 @@ Download latest **Transmission.zip** from releases, unpack it somewhere and run 
 * web_install.bat: install web UI for transmission (browse http://localhost:9091/transmission/web/)
 
 # Known issues
-Transmission for windows have a bug with folders path ending with backslash. If you put download into folder like **C:\\Torrents** it will run ok, but path **C:\\Torrents\\** (with ending backslash) will fail. Not really a big deal, just make sure once that there is no backslash when starting torrent download.
+`FIXED` Transmission for windows has bug with folders path ending with backslash. If you put download into folder like **C:\\Torrents** it will run ok, but path **C:\\Torrents\\** (with ending backslash) will fail. Not really a big deal, just make sure once that there is no backslash when starting torrent download.
