@@ -46,12 +46,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./code;./natpmp;./zlib;./curl;$(IncludePath)</IncludePath>
+    <IncludePath>./;./code;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./code;./natpmp;./zlib;./curl;$(IncludePath)</IncludePath>
+    <IncludePath>./;./code;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -88,6 +88,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="arc4\arc4.c" />
     <ClCompile Include="b64\cdecode.c" />
     <ClCompile Include="b64\cencode.c" />
     <ClCompile Include="code\announcer-http.c" />
@@ -389,6 +390,7 @@
     <ClCompile Include="zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="arc4\arc4.h" />
     <ClInclude Include="b64\cdecode.h" />
     <ClInclude Include="b64\cencode.h" />
     <ClInclude Include="b64\decode.h" />

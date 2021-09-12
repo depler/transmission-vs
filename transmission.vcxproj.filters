@@ -34,6 +34,9 @@
     <Filter Include="sys">
       <UniqueIdentifier>{54d0722c-6b9d-464d-84ae-97955dc0cf4e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="arc4">
+      <UniqueIdentifier>{165e0ae6-14e0-4589-88a4-3a55f4d4a90a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="b64\cdecode.c">
@@ -914,6 +917,9 @@
     </ClCompile>
     <ClCompile Include="curl\bufref.c">
       <Filter>curl</Filter>
+    </ClCompile>
+    <ClCompile Include="arc4\arc4.c">
+      <Filter>arc4</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2156,6 +2162,9 @@
     </ClInclude>
     <ClInclude Include="curl\bufref.h">
       <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="arc4\arc4.h">
+      <Filter>arc4</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
