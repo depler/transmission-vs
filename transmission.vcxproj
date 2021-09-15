@@ -357,6 +357,7 @@
     <ClCompile Include="libutp\utp.cpp" />
     <ClCompile Include="libutp\utp_utils.cpp" />
     <ClCompile Include="libutp\win32_inet_ntop.cpp" />
+    <ClCompile Include="miniupnp\addr_is_reserved.c" />
     <ClCompile Include="miniupnp\connecthostport.c" />
     <ClCompile Include="miniupnp\igd_desc_parse.c" />
     <ClCompile Include="miniupnp\minisoap.c" />
@@ -668,6 +669,8 @@
     <ClInclude Include="libutp\utp_utils.h" />
     <ClInclude Include="libutp\utypes.h" />
     <ClInclude Include="libutp\win32_inet_ntop.h" />
+    <ClInclude Include="miniupnp\addr_is_reserved.h" />
+    <ClInclude Include="miniupnp\codelength.h" />
     <ClInclude Include="miniupnp\connecthostport.h" />
     <ClInclude Include="miniupnp\igd_desc_parse.h" />
     <ClInclude Include="miniupnp\minisoap.h" />
@@ -676,7 +679,9 @@
     <ClInclude Include="miniupnp\miniupnpcstrings.h" />
     <ClInclude Include="miniupnp\miniupnpctypes.h" />
     <ClInclude Include="miniupnp\miniupnpc_declspec.h" />
+    <ClInclude Include="miniupnp\miniupnpc_socketdef.h" />
     <ClInclude Include="miniupnp\miniwget.h" />
+    <ClInclude Include="miniupnp\miniwget_private.h" />
     <ClInclude Include="miniupnp\minixml.h" />
     <ClInclude Include="miniupnp\portlistingparse.h" />
     <ClInclude Include="miniupnp\receivedata.h" />
@@ -684,6 +689,7 @@
     <ClInclude Include="miniupnp\upnpdev.h" />
     <ClInclude Include="miniupnp\upnperrors.h" />
     <ClInclude Include="miniupnp\upnpreplyparse.h" />
+    <ClInclude Include="miniupnp\win32_snprintf.h" />
     <ClInclude Include="natpmp\getgateway.h" />
     <ClInclude Include="natpmp\natpmp.h" />
     <ClInclude Include="natpmp\natpmp_declspec.h" />

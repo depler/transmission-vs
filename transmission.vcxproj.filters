@@ -66,45 +66,6 @@
     <ClCompile Include="dht\dht.c">
       <Filter>dht</Filter>
     </ClCompile>
-    <ClCompile Include="miniupnp\connecthostport.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\igd_desc_parse.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\minisoap.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\minissdpc.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\miniupnpc.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\miniwget.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\minixml.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\portlistingparse.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\receivedata.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\upnpcommands.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\upnpdev.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\upnperrors.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
-    <ClCompile Include="miniupnp\upnpreplyparse.c">
-      <Filter>miniupnp</Filter>
-    </ClCompile>
     <ClCompile Include="event2\buffer.c">
       <Filter>event2</Filter>
     </ClCompile>
@@ -921,6 +882,48 @@
     <ClCompile Include="arc4\arc4.c">
       <Filter>arc4</Filter>
     </ClCompile>
+    <ClCompile Include="miniupnp\addr_is_reserved.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\connecthostport.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\igd_desc_parse.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\minisoap.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\minissdpc.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\miniupnpc.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\miniwget.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\minixml.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\portlistingparse.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\receivedata.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\upnpcommands.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\upnpdev.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\upnperrors.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
+    <ClCompile Include="miniupnp\upnpreplyparse.c">
+      <Filter>miniupnp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="b64\cdecode.h">
@@ -967,54 +970,6 @@
     </ClInclude>
     <ClInclude Include="dht\dht.h">
       <Filter>dht</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\connecthostport.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\igd_desc_parse.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\minisoap.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\minissdpc.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\miniupnpc.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\miniwget.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\minixml.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\portlistingparse.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\receivedata.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\upnpcommands.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\upnpdev.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\upnperrors.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\upnpreplyparse.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\miniupnpc_declspec.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\miniupnpctypes.h">
-      <Filter>miniupnp</Filter>
-    </ClInclude>
-    <ClInclude Include="miniupnp\miniupnpcstrings.h">
-      <Filter>miniupnp</Filter>
     </ClInclude>
     <ClInclude Include="event2\buffer.h">
       <Filter>event2</Filter>
@@ -2258,6 +2213,69 @@
     </ClInclude>
     <ClInclude Include="openssl\aes.h">
       <Filter>openssl</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\addr_is_reserved.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\codelength.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\connecthostport.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\igd_desc_parse.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\minisoap.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\minissdpc.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniupnpc.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniupnpc_declspec.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniupnpc_socketdef.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniupnpcstrings.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniupnpctypes.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniwget.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\miniwget_private.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\minixml.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\portlistingparse.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\receivedata.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\upnpcommands.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\upnpdev.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\upnperrors.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\upnpreplyparse.h">
+      <Filter>miniupnp</Filter>
+    </ClInclude>
+    <ClInclude Include="miniupnp\win32_snprintf.h">
+      <Filter>miniupnp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

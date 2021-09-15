@@ -1,9 +1,9 @@
-/* $Id: miniupnpc.c,v 1.148 2016/01/24 17:24:36 nanard Exp $ */
+/* $Id: miniupnpc.c,v 1.159 2021/03/02 23:36:32 nanard Exp $ */
 /* vim: tabstop=4 shiftwidth=4 noexpandtab
  * Project : miniupnp
- * Web : http://miniupnp.free.fr/
+ * Web : http://miniupnp.free.fr/ or https://miniupnp.tuxfamily.org/
  * Author : Thomas BERNARD
- * copyright (c) 2005-2016 Thomas Bernard
+ * copyright (c) 2005-2021 Thomas Bernard
  * This software is subjet to the conditions detailed in the
  * provided LICENSE file. */
 #include <stdlib.h>
@@ -15,7 +15,7 @@
 #include <ws2tcpip.h>
 #include <io.h>
 #include <iphlpapi.h>
-#define snprintf _snprintf
+#include "win32_snprintf.h"
 #define strdup _strdup
 #ifndef strncasecmp
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
@@ -56,13 +56,15 @@
 #include "miniupnpc.h"
 #include "minissdpc.h"
 #include "miniwget.h"
+#include "miniwget_private.h"
 #include "minisoap.h"
 #include "minixml.h"
 #include "upnpcommands.h"
 #include "connecthostport.h"
+#include "addr_is_reserved.h"
 
-/* compare the begining of a string with a constant string */
-#define COMPARE(str, cstr) (0==memcmp(str, cstr, sizeof(cstr) - 1))
+/* compare the beginning of a string with a constant string */
+#define COMPARE(str, cstr) (0==strncmp(str, cstr, sizeof(cstr) - 1))
 
 #ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
@@ -71,25 +73,6 @@
 #define SOAPPREFIX "s"
 #define SERVICEPREFIX "u"
 #define SERVICEPREFIX2 'u'
-
-/* check if an ip address is a private (LAN) address
- * see https://tools.ietf.org/html/rfc1918 */
-static int is_rfc1918addr(const char * addr)
-{
-	/* 192.168.0.0     -   192.168.255.255 (192.168/16 prefix) */
-	if(COMPARE(addr, "192.168."))
-		return 1;
-	/* 10.0.0.0        -   10.255.255.255  (10/8 prefix) */
-	if(COMPARE(addr, "10."))
-		return 1;
-	/* 172.16.0.0      -   172.31.255.255  (172.16/12 prefix) */
-	if(COMPARE(addr, "172.")) {
-		int i = atoi(addr + 4);
-		if((16 <= i) && (i <= 31))
-			return 1;
-	}
-	return 0;
-}
 
 /* root description parsing */
 MINIUPNP_LIBSPEC void parserootdesc(const char * buffer, int bufsize, struct IGDdatas * data)
@@ -114,9 +97,10 @@ MINIUPNP_LIBSPEC void parserootdesc(const char * buffer, int bufsize, struct IGD
  * return values :
  *   pointer - OK
  *   NULL - error */
-char * simpleUPnPcommand2(int s, const char * url, const char * service,
-		       const char * action, struct UPNParg * args,
-		       int * bufsize, const char * httpversion)
+static char *
+simpleUPnPcommand2(SOCKET s, const char * url, const char * service,
+                   const char * action, struct UPNParg * args,
+                   int * bufsize, const char * httpversion)
 {
 	char hostname[MAXHOSTNAMELEN+1];
 	unsigned short port = 0;
@@ -213,9 +197,9 @@ char * simpleUPnPcommand2(int s, const char * url, const char * service,
 			return NULL;
 	}
 	if(!parseURL(url, hostname, &port, &path, NULL)) return NULL;
-	if(s < 0) {
+	if(ISINVALID(s)) {
 		s = connecthostport(hostname, port, 0);
-		if(s < 0) {
+		if(ISINVALID(s)) {
 			/* failed to connect */
 			return NULL;
 		}
@@ -250,22 +234,23 @@ char * simpleUPnPcommand2(int s, const char * url, const char * service,
  * return values :
  *   pointer - OK
  *   NULL    - error */
-char * simpleUPnPcommand(int s, const char * url, const char * service,
-		       const char * action, struct UPNParg * args,
-		       int * bufsize)
+char *
+simpleUPnPcommand(int s, const char * url, const char * service,
+                  const char * action, struct UPNParg * args,
+                  int * bufsize)
 {
 	char * buf;
 
 #if 1
-	buf = simpleUPnPcommand2(s, url, service, action, args, bufsize, "1.1");
+	buf = simpleUPnPcommand2((SOCKET)s, url, service, action, args, bufsize, "1.1");
 #else
-	buf = simpleUPnPcommand2(s, url, service, action, args, bufsize, "1.0");
+	buf = simpleUPnPcommand2((SOCKET)s, url, service, action, args, bufsize, "1.0");
 	if (!buf || *bufsize == 0)
 	{
 #if DEBUG
 	    printf("Error or no result from SOAP request; retrying with HTTP/1.1\n");
 #endif
-		buf = simpleUPnPcommand2(s, url, service, action, args, bufsize, "1.1");
+		buf = simpleUPnPcommand2((SOCKET)s, url, service, action, args, bufsize, "1.1");
 	}
 #endif
 	return buf;
@@ -299,30 +284,32 @@ upnpDiscoverDevices(const char * const deviceTypes[],
 	/* first try to get infos from minissdpd ! */
 	if(!minissdpdsock)
 		minissdpdsock = "/var/run/minissdpd.sock";
-	for(deviceIndex = 0; deviceTypes[deviceIndex]; deviceIndex++) {
-		struct UPNPDev * minissdpd_devlist;
-		int only_rootdevice = 1;
-		minissdpd_devlist = getDevicesFromMiniSSDPD(deviceTypes[deviceIndex],
-		                                            minissdpdsock, 0);
-		if(minissdpd_devlist) {
-#ifdef DEBUG
-			printf("returned by MiniSSDPD: %s\t%s\n",
-			       minissdpd_devlist->st, minissdpd_devlist->descURL);
-#endif /* DEBUG */
-			if(!strstr(minissdpd_devlist->st, "rootdevice"))
-				only_rootdevice = 0;
-			for(tmp = minissdpd_devlist; tmp->pNext != NULL; tmp = tmp->pNext) {
+	if(minissdpdsock[0] != '\0') {
+		for(deviceIndex = 0; deviceTypes[deviceIndex]; deviceIndex++) {
+			struct UPNPDev * minissdpd_devlist;
+			int only_rootdevice = 1;
+			minissdpd_devlist = getDevicesFromMiniSSDPD(deviceTypes[deviceIndex],
+			                                            minissdpdsock, 0);
+			if(minissdpd_devlist) {
 #ifdef DEBUG
 				printf("returned by MiniSSDPD: %s\t%s\n",
-				       tmp->pNext->st, tmp->pNext->descURL);
+				       minissdpd_devlist->st, minissdpd_devlist->descURL);
 #endif /* DEBUG */
-				if(!strstr(tmp->st, "rootdevice"))
+				if(!strstr(minissdpd_devlist->st, "rootdevice"))
 					only_rootdevice = 0;
+				for(tmp = minissdpd_devlist; tmp->pNext != NULL; tmp = tmp->pNext) {
+#ifdef DEBUG
+					printf("returned by MiniSSDPD: %s\t%s\n",
+					       tmp->pNext->st, tmp->pNext->descURL);
+#endif /* DEBUG */
+					if(!strstr(tmp->st, "rootdevice"))
+						only_rootdevice = 0;
+				}
+				tmp->pNext = devlist;
+				devlist = minissdpd_devlist;
+				if(!searchalltypes && !only_rootdevice)
+					break;
 			}
-			tmp->pNext = devlist;
-			devlist = minissdpd_devlist;
-			if(!searchalltypes && !only_rootdevice)
-				break;
 		}
 	}
 	for(tmp = devlist; tmp != NULL; tmp = tmp->pNext) {
@@ -333,6 +320,8 @@ upnpDiscoverDevices(const char * const deviceTypes[],
 			return devlist;
 		}
 	}
+#else	/* !defined(_WIN32) && !defined(__amigaos__) && !defined(__amigaos4__) */
+	(void)minissdpdsock; /* unused */
 #endif	/* !defined(_WIN32) && !defined(__amigaos__) && !defined(__amigaos4__) */
 
 	/* direct discovery if minissdpd responses are not sufficient */
@@ -411,7 +400,7 @@ static char *
 build_absolute_url(const char * baseurl, const char * descURL,
                    const char * url, unsigned int scope_id)
 {
-	int l, n;
+	size_t l, n;
 	char * s;
 	const char * base;
 	char * p;
@@ -454,7 +443,7 @@ build_absolute_url(const char * baseurl, const char * descURL,
 	memcpy(s, base, n);
 	if(scope_id != 0) {
 		s[n] = '\0';
-		if(0 == memcmp(s, "http://[fe80:", 13)) {
+		if(n > 13 && 0 == memcmp(s, "http://[fe80:", 13)) {
 			/* this is a linklocal IPv6 address */
 			p = strchr(s, ']');
 			if(p) {
@@ -550,7 +539,7 @@ UPNPIGD_IsConnected(struct UPNPUrls * urls, struct IGDdatas * data)
  *     3 = an UPnP device has been found but was not recognized as an IGD
  *
  * In any positive non zero return case, the urls and data structures
- * passed as parameters are set. Dont forget to call FreeUPNPUrls(urls) to
+ * passed as parameters are set. Don't forget to call FreeUPNPUrls(urls) to
  * free allocated memory.
  */
 MINIUPNP_LIBSPEC int
@@ -560,6 +549,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 				 char * lanaddr, int lanaddrlen)
 {
 	struct xml_desc {
+		char lanaddr[40];
 		char * xml;
 		int size;
 		int is_igd;
@@ -568,9 +558,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	int ndev = 0;
 	int i;
 	int state = -1; /* state 1 : IGD connected. State 2 : IGD. State 3 : anything */
-	int n_igd = 0;
 	char extIpAddr[16];
-	char myLanAddr[40];
 	int status_code = -1;
 
 	if(!devlist)
@@ -583,19 +571,17 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	/* counting total number of devices in the list */
 	for(dev = devlist; dev; dev = dev->pNext)
 		ndev++;
-	if(ndev > 0)
-	{
-		desc = calloc(ndev, sizeof(struct xml_desc));
-		if(!desc)
-			return -1; /* memory allocation error */
-	}
+	/* ndev is always > 0 */
+	desc = calloc(ndev, sizeof(struct xml_desc));
+	if(!desc)
+		return -1; /* memory allocation error */
 	/* Step 1 : downloading descriptions and testing type */
 	for(dev = devlist, i = 0; dev; dev = dev->pNext, i++)
 	{
 		/* we should choose an internet gateway device.
 		 * with st == urn:schemas-upnp-org:device:InternetGatewayDevice:1 */
 		desc[i].xml = miniwget_getaddr(dev->descURL, &(desc[i].size),
-		                               myLanAddr, sizeof(myLanAddr),
+		                               desc[i].lanaddr, sizeof(desc[i].lanaddr),
 		                               dev->scope_id, &status_code);
 #ifdef DEBUG
 		if(!desc[i].xml)
@@ -612,9 +598,6 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 			           "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:"))
 			{
 				desc[i].is_igd = 1;
-				n_igd++;
-				if(lanaddr)
-					strncpy(lanaddr, myLanAddr, lanaddrlen);
 			}
 		}
 	}
@@ -634,7 +617,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 
 				  GetUPNPUrls(urls, data, dev->descURL, dev->scope_id);
 
-				  /* in state 2 and 3 we dont test if device is connected ! */
+				  /* in state 2 and 3 we don't test if device is connected ! */
 				  if(state >= 2)
 				    goto free_and_return;
 				  is_connected = UPNPIGD_IsConnected(urls, data);
@@ -645,8 +628,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 				  /* checks that status is connected AND there is a external IP address assigned */
 				  if(is_connected &&
 				     (UPNP_GetExternalIPAddress(urls->controlURL,  data->first.servicetype, extIpAddr) == 0)) {
-					if(!is_rfc1918addr(extIpAddr) && (extIpAddr[0] != '\0')
-					   && (0 != strcmp(extIpAddr, "0.0.0.0")))
+					if(!addr_is_reserved(extIpAddr))
 					  goto free_and_return;
 				  }
 				  FreeUPNPUrls(urls);
@@ -667,8 +649,7 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 #endif
 				    if(is_connected &&
 				       (UPNP_GetExternalIPAddress(urls->controlURL,  data->first.servicetype, extIpAddr) == 0)) {
-					  if(!is_rfc1918addr(extIpAddr) && (extIpAddr[0] != '\0')
-					     && (0 != strcmp(extIpAddr, "0.0.0.0")))
+					  if(!addr_is_reserved(extIpAddr))
 					    goto free_and_return;
 				    }
 				    FreeUPNPUrls(urls);
@@ -680,14 +661,11 @@ UPNP_GetValidIGD(struct UPNPDev * devlist,
 	}
 	state = 0;
 free_and_return:
-	if(desc) {
-		for(i = 0; i < ndev; i++) {
-			if(desc[i].xml) {
-				free(desc[i].xml);
-			}
-		}
-		free(desc);
-	}
+	if (lanaddr != NULL && state >= 1 && state <= 3 && i < ndev)
+		strncpy(lanaddr, desc[i].lanaddr, lanaddrlen);
+	for(i = 0; i < ndev; i++)
+		free(desc[i].xml);
+	free(desc);
 	return state;
 }
 
@@ -712,11 +690,9 @@ UPNP_GetIGDFromUrl(const char * rootdescurl,
 		memset(urls, 0, sizeof(struct UPNPUrls));
 		parserootdesc(descXML, descXMLsize, data);
 		free(descXML);
-		descXML = NULL;
 		GetUPNPUrls(urls, data, rootdescurl, 0);
 		return 1;
 	} else {
 		return 0;
 	}
 }
-

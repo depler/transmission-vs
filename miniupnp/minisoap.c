@@ -1,7 +1,8 @@
-/* $Id: minisoap.c,v 1.23 2014/11/04 22:31:55 nanard Exp $ */
-/* Project : miniupnp
+/* $Id: minisoap.c,v 1.30 2020/11/09 19:27:42 nanard Exp $ */
+/* vim: tabstop=4 shiftwidth=4 noexpandtab
+ * Project : miniupnp
  * Author : Thomas Bernard
- * Copyright (c) 2005-2015 Thomas Bernard
+ * Copyright (c) 2005-2020 Thomas Bernard
  * This software is subject to the conditions detailed in the
  * LICENCE file provided in this distribution.
  *
@@ -12,7 +13,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <winsock2.h>
-#define snprintf _snprintf
+#include "win32_snprintf.h"
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -24,16 +25,10 @@
 /* only for malloc */
 #include <stdlib.h>
 
-#ifdef _WIN32
-#define PRINT_SOCKET_ERROR(x)    fprintf(stderr, "Socket error: %s, %d\n", x, WSAGetLastError());
-#else
-#define PRINT_SOCKET_ERROR(x) perror(x)
-#endif
-
 /* httpWrite sends the headers and the body to the socket
  * and returns the number of bytes sent */
 static int
-httpWrite(int fd, const char * body, int bodysize,
+httpWrite(SOCKET fd, const char * body, int bodysize,
           const char * headers, int headerssize)
 {
 	int n = 0;
@@ -55,7 +50,7 @@ httpWrite(int fd, const char * body, int bodysize,
 	  PRINT_SOCKET_ERROR("send");
 	}
 	/* disable send on the socket */
-	/* draytek routers dont seems to like that... */
+	/* draytek routers don't seem to like that... */
 #if 0
 #ifdef _WIN32
 	if(shutdown(fd, SD_SEND)<0) {
@@ -70,7 +65,7 @@ httpWrite(int fd, const char * body, int bodysize,
 }
 
 /* self explanatory  */
-int soapPostSubmit(int fd,
+int soapPostSubmit(SOCKET fd,
                    const char * url,
 				   const char * host,
 				   unsigned short port,
@@ -78,11 +73,10 @@ int soapPostSubmit(int fd,
 				   const char * body,
 				   const char * httpversion)
 {
-	int bodysize;
 	char headerbuf[512];
 	int headerssize;
 	char portstr[8];
-	bodysize = (int)strlen(body);
+	int bodysize = (int)strlen(body);
 	/* We are not using keep-alive HTTP connections.
 	 * HTTP/1.1 needs the header Connection: close to do that.
 	 * This is the default with HTTP/1.0

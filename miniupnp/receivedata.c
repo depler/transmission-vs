@@ -1,8 +1,8 @@
-/* $Id: receivedata.c,v 1.7 2015/11/09 21:51:41 nanard Exp $ */
+/* $Id: receivedata.c,v 1.10 2021/03/02 23:33:07 nanard Exp $ */
 /* Project : miniupnp
  * Website : http://miniupnp.free.fr/
  * Author : Thomas Bernard
- * Copyright (c) 2011-2014 Thomas Bernard
+ * Copyright (c) 2011-2021 Thomas Bernard
  * This software is subject to the conditions detailed in the
  * LICENCE file provided in this distribution. */
 
@@ -27,16 +27,10 @@
 #define MINIUPNPC_IGNORE_EINTR
 #endif /* _WIN32 */
 
-#ifdef _WIN32
-#define PRINT_SOCKET_ERROR(x)    fprintf(stderr, "Socket error: %s, %d\n", x, WSAGetLastError());
-#else
-#define PRINT_SOCKET_ERROR(x) perror(x)
-#endif
-
 #include "receivedata.h"
 
 int
-receivedata(int socket,
+receivedata(SOCKET socket,
             char * data, int length,
             int timeout, unsigned int * scope_id)
 {
@@ -98,7 +92,13 @@ receivedata(int socket,
 #endif	/* DEBUG */
 		if(scope_id)
 			*scope_id = src_addr6->sin6_scope_id;
+	} else {
+		if(scope_id)
+			*scope_id = 0;
 	}
+#else	/* MINIUPNPC_GET_SRC_ADDR */
+	if(scope_id)
+		*scope_id = 0;
 #endif	/* MINIUPNPC_GET_SRC_ADDR */
 	return n;
 }
