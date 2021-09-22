@@ -596,6 +596,7 @@
     <ClInclude Include="curl\vquic\quiche.h" />
     <ClInclude Include="curl\vquic\vquic.h" />
     <ClInclude Include="curl\vssh\ssh.h" />
+    <ClInclude Include="curl\vssh\wolfssh.h" />
     <ClInclude Include="curl\vtls\bearssl.h" />
     <ClInclude Include="curl\vtls\gskit.h" />
     <ClInclude Include="curl\vtls\gtls.h" />

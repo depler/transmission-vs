@@ -2277,6 +2277,9 @@
     <ClInclude Include="miniupnp\win32_snprintf.h">
       <Filter>miniupnp</Filter>
     </ClInclude>
+    <ClInclude Include="curl\vssh\wolfssh.h">
+      <Filter>curl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />
