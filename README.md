@@ -4,14 +4,14 @@ This project is about building Transmission torrent daemon as a single binary wi
 Current source code components:
 * Transmission (https://github.com/transmission/transmission): 3.00
 * OpenSSL (https://github.com/openssl/openssl): 3.0.0
-* Curl (https://github.com/curl/curl): 7.79.0
+* Curl (https://github.com/curl/curl): 7.79.1
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.11
 * MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.2
 * DHT (https://github.com/jech/dht): 0.26
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.0
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.1
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
