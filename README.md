@@ -20,11 +20,13 @@ Binary dependencies: none. Compatible with Windows Vista and newer.
 Clone current repository and build **transmission.sln** file with Visual Studio 2019 or newer. No, additional black magic is not required. Yes, just that simple.
 
 # Config
-Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/should to change settings `download-dir`, `incomplete-dir` (please dont use ending backslash).
+Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/should change following settings: `download-dir`, `incomplete-dir`. Some default values:
+- torrents folder path is `C:\Torrents` (please dont use ending backslash)
+- web UI url is http://localhost:9091/transmission/web/
 
 # Run
 Download latest **Transmission.zip** from releases, unpack it somewhere and run one of the following with administrator rights:
-* run_foreground.bat: run transmission in console mode (without installation)
+* run_foreground.bat: run transmission in console mode (without service installation)
 * daemon_create.bat: create windows service for transmission
 * daemon_start.bat: start windows service for transmission
 * daemon_stop.bat: stop windows service for transmission
