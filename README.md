@@ -11,7 +11,7 @@ Current source code components:
 * DHT (https://github.com/jech/dht): 0.26
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.1
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
