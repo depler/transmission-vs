@@ -17,7 +17,6 @@
 
 #define JSONSL_STATE_USER_FIELDS /* no fields */
 #include "jsonsl.h"
-#include "jsonsl.c"
 
 #define __LIBTRANSMISSION_VARIANT_MODULE__
 

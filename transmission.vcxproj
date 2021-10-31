@@ -44,41 +44,40 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./code;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
+    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./code;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
+    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;$(IncludePath)</IncludePath>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
-      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DEVENT__HAVE_OPENSSL -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_OPENSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>c:\Data\XSoft\Transmission\daemon\transmission.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DEVENT__HAVE_OPENSSL -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_OPENSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

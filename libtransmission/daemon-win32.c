@@ -10,10 +10,10 @@
 
 #include <windows.h>
 
-#include <transmission.h>
-#include <error.h>
-#include <log.h>
-#include <utils.h>
+#include "transmission.h"
+#include "error.h"
+#include "log.h"
+#include "utils.h"
 
 #include "daemon.h"
 

@@ -22,15 +22,15 @@
 
 #include <event2/event.h>
 
-#include <transmission.h>
-#include <error.h>
-#include <file.h>
-#include <tr-getopt.h>
-#include <log.h>
-#include <utils.h>
-#include <variant.h>
-#include <version.h>
-#include <watchdir.h>
+#include "transmission.h"
+#include "error.h"
+#include "file.h"
+#include "tr-getopt.h"
+#include "log.h"
+#include "utils.h"
+#include "variant.h"
+#include "version.h"
+#include "watchdir.h"
 
 #ifdef USE_SYSTEMD
 
