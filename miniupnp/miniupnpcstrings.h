@@ -9,7 +9,7 @@
 #define MINIUPNPCSTRINGS_H_INCLUDED
 
 #define OS_STRING "Windows"
-#define MINIUPNPC_VERSION_STRING "2.2.2"
+#define MINIUPNPC_VERSION_STRING "2.2.3"
 
 #if 0
 /* according to "UPnP Device Architecture 1.0" */
