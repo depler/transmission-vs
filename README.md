@@ -7,7 +7,7 @@ Current source code components:
 * Curl (https://github.com/curl/curl): 7.80.0
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.11
-* MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.2
+* MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.3
 * DHT (https://github.com/jech/dht): 0.26
 
 Releases contains additional binaries (besides transmission itself):
