@@ -78,7 +78,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "ProductName", "Transmission"
-            VALUE "ProductVersion", "2021-09-22"
+            VALUE "ProductVersion", "2021-11-20"
             VALUE "FileVersion", "3.0.0.0"
             VALUE "LegalCopyright", "https://github.com/depler/transmission"
         END
