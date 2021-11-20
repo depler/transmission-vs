@@ -15,7 +15,7 @@ Current source code components:
 * libnatpmp (https://github.com/transmission/libnatpmp): post-20151025-transmission
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.5.0
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
