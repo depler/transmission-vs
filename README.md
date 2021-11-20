@@ -10,7 +10,8 @@ Current source code components:
 * MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.3
 * DHT (https://github.com/jech/dht): 0.26
 * ARC4 (https://github.com/transmission/arc4): 1.0.0
-* LibUTP (https://github.com/transmission/libutp): post-3.3-transmission
+* libutp (https://github.com/transmission/libutp): post-3.3-transmission
+* libb64 (https://github.com/transmission/libb64): 2.0.0.1
 
 Releases contains additional binaries (besides transmission itself):
 * Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
