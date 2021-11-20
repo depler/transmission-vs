@@ -9,6 +9,7 @@ Current source code components:
 * Zlib (https://github.com/madler/zlib): 1.2.11
 * MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.3
 * DHT (https://github.com/jech/dht): 0.26
+* ARC4 (https://github.com/transmission/arc4): 1.0.0
 
 Releases contains additional binaries (besides transmission itself):
 * Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
