@@ -7,8 +7,10 @@ Current source code components:
 * Curl (https://github.com/curl/curl): 7.80.0
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.11
-* MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.2
+* MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.3
 * DHT (https://github.com/jech/dht): 0.26
+* ARC4 (https://github.com/transmission/arc4): 1.0.0
+* LibUTP (https://github.com/transmission/libutp): post-3.3-transmission
 
 Releases contains additional binaries (besides transmission itself):
 * Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
