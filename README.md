@@ -12,7 +12,7 @@ Current source code components:
 * ARC4 (https://github.com/transmission/arc4): 1.0.0
 * libutp (https://github.com/transmission/libutp): post-3.3-transmission
 * libb64 (https://github.com/libb64/libb64): 2.0.0.1
-* libnatpmp (https://github.com/transmission/libnatpmp): master
+* libnatpmp (https://github.com/transmission/libnatpmp): post-20151025-transmission
 
 Releases contains additional binaries (besides transmission itself):
 * Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
