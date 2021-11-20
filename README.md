@@ -17,7 +17,7 @@ Releases contains additional binaries (besides transmission itself):
 Binary dependencies: none. Compatible with Windows Vista and newer.
 
 # Build
-Clone current repository and build **transmission.sln** file with Visual Studio 2019 or newer. No, additional black magic is not required. Yes, just that simple.
+Clone current repository and build **transmission.sln** file with Visual Studio 2022 or newer. No, additional black magic is not required. Yes, just that simple.
 
 # Config
 Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/should change following settings: `download-dir`, `incomplete-dir`. Some default values:
