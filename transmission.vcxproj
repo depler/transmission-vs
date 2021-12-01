@@ -389,7 +389,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="arc4\arc4.h" />
-    <ClInclude Include="b64\ccommon.h" />
     <ClInclude Include="b64\cdecode.h" />
     <ClInclude Include="b64\cencode.h" />
     <ClInclude Include="b64\decode.h" />

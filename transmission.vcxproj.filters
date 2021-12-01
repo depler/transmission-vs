@@ -2277,9 +2277,6 @@
     <ClInclude Include="miniupnp\win32_snprintf.h">
       <Filter>miniupnp</Filter>
     </ClInclude>
-    <ClInclude Include="b64\ccommon.h">
-      <Filter>b64</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />

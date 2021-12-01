@@ -12,9 +12,9 @@ For details, see http://sourceforge.net/projects/libb64
 
 namespace base64
 {
-	extern "C"
+	extern "C" 
 	{
-#include "cencode.h"
+		#include "cencode.h"
 	}
 
 	struct encoder
@@ -23,19 +23,17 @@ namespace base64
 		int _buffersize;
 
 		encoder(int buffersize_in = BUFFERSIZE)
-			: _buffersize(buffersize_in)
-		{
-			base64_init_encodestate(&_state);
-		}
+		: _buffersize(buffersize_in)
+		{}
 
 		int encode(char value_in)
 		{
 			return base64_encode_value(value_in);
 		}
 
-		std::streamsize encode(const char* code_in, const std::streamsize length_in, char* plaintext_out)
+		int encode(const char* code_in, const int length_in, char* plaintext_out)
 		{
-			return base64_encode_block(code_in, static_cast<int>(length_in), plaintext_out, &_state);
+			return base64_encode_block(code_in, length_in, plaintext_out, &_state);
 		}
 
 		int encode_end(char* plaintext_out)
@@ -49,9 +47,9 @@ namespace base64
 			//
 			const int N = _buffersize;
 			char* plaintext = new char[N];
-			char* code = new char[2 * N];
-			std::streamsize plainlength;
-			std::streamsize codelength;
+			char* code = new char[2*N];
+			int plainlength;
+			int codelength;
 
 			do
 			{
@@ -60,15 +58,16 @@ namespace base64
 				//
 				codelength = encode(plaintext, plainlength, code);
 				ostream_in.write(code, codelength);
-			} while(istream_in.good() && plainlength > 0);
+			}
+			while (istream_in.good() && plainlength > 0);
 
 			codelength = encode_end(code);
 			ostream_in.write(code, codelength);
 			//
 			base64_init_encodestate(&_state);
 
-			delete[] code;
-			delete[] plaintext;
+			delete [] code;
+			delete [] plaintext;
 		}
 	};
 
