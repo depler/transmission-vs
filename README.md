@@ -9,13 +9,9 @@ Current source code components:
 * Zlib (https://github.com/madler/zlib): 1.2.11
 * MiniUPnP (https://github.com/miniupnp/miniupnp): 2.2.3
 * DHT (https://github.com/jech/dht): 0.26
-* ARC4 (https://github.com/transmission/arc4): 1.0.0
-* libutp (https://github.com/transmission/libutp): post-3.3-transmission
-* libb64 (https://github.com/libb64/libb64): 2.0.0.1
-* libnatpmp (https://github.com/transmission/libnatpmp): post-20151025-transmission
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.4.2
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.5.0
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
