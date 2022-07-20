@@ -896,7 +896,6 @@
     <ClInclude Include="openssl\x509v3.h" />
     <ClInclude Include="openssl\x509v3err.h" />
     <ClInclude Include="openssl\x509_vfy.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="sys\queue.h" />
     <ClInclude Include="dht\dht.h" />
     <ClInclude Include="utfcpp\utf8.h" />

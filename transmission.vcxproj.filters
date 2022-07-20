@@ -1178,7 +1178,6 @@
     <ClInclude Include="sys\queue.h">
       <Filter>sys</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h" />
     <ClInclude Include="zlib\crc32.h">
       <Filter>zlib</Filter>
     </ClInclude>
