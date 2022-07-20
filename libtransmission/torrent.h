@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2009-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2009-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0), GPLv3 (SPDX: GPL-3.0),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,15 +9,36 @@
 #error only libtransmission should #include this header.
 #endif
 
-#include "bandwidth.h" /* tr_bandwidth */
-#include "completion.h" /* tr_completion */
-#include "session.h" /* tr_sessionLock(), tr_sessionUnlock() */
-#include "tr-assert.h"
-#include "utils.h" /* TR_GNUC_PRINTF */
-#include "ptrarray.h"
+#include <cstddef> // size_t
+#include <ctime>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
-struct tr_torrent_tiers;
+#include "transmission.h"
+
+#include "announce-list.h"
+#include "bandwidth.h"
+#include "bitfield.h"
+#include "block-info.h"
+#include "completion.h"
+#include "file.h"
+#include "file-piece-map.h"
+#include "interned-string.h"
+#include "log.h"
+#include "session.h"
+#include "torrent-metainfo.h"
+#include "tr-macros.h"
+#include "tr-strbuf.h"
+
+class tr_swarm;
+struct tr_error;
 struct tr_magnet_info;
+struct tr_metainfo_parsed;
+struct tr_session;
+struct tr_torrent;
+struct tr_torrent_announcer;
 
 /**
 ***  Package-visible ctor API
@@ -28,103 +46,599 @@ struct tr_magnet_info;
 
 void tr_torrentFree(tr_torrent* tor);
 
-void tr_ctorSetSave(tr_ctor* ctor, bool saveMetadataInOurTorrentsDir);
-
-bool tr_ctorGetSave(tr_ctor const* ctor);
-
 void tr_ctorInitTorrentPriorities(tr_ctor const* ctor, tr_torrent* tor);
 
 void tr_ctorInitTorrentWanted(tr_ctor const* ctor, tr_torrent* tor);
+
+bool tr_ctorSaveContents(tr_ctor const* ctor, std::string_view filename, tr_error** error);
+
+tr_session* tr_ctorGetSession(tr_ctor const* ctor);
+
+bool tr_ctorGetIncompleteDir(tr_ctor const* ctor, char const** setmeIncompleteDir);
 
 /**
 ***
 **/
 
-/* just like tr_torrentSetFileDLs but doesn't trigger a fastresume save */
-void tr_torrentInitFileDLs(tr_torrent* tor, tr_file_index_t const* files, tr_file_index_t fileCount, bool do_download);
-
-void tr_torrentSetLabels(tr_torrent* tor, tr_ptrArray* labels);
-
-void tr_torrentRecheckCompleteness(tr_torrent*);
-
-void tr_torrentSetHasPiece(tr_torrent* tor, tr_piece_index_t pieceIndex, bool has);
-
 void tr_torrentChangeMyPort(tr_torrent* session);
 
-tr_torrent* tr_torrentFindFromHashString(tr_session* session, char const* hashString);
-
-tr_torrent* tr_torrentFindFromObfuscatedHash(tr_session* session, uint8_t const* hash);
-
-bool tr_torrentIsPieceTransferAllowed(tr_torrent const* torrent, tr_direction direction);
-
-#define tr_block(a, b) _tr_block(tor, a, b)
-
-tr_block_index_t _tr_block(tr_torrent const* tor, tr_piece_index_t index, uint32_t offset);
+tr_torrent* tr_torrentFindFromObfuscatedHash(tr_session* session, tr_sha1_digest_t const& hash);
 
 bool tr_torrentReqIsValid(tr_torrent const* tor, tr_piece_index_t index, uint32_t offset, uint32_t length);
 
-uint64_t tr_pieceOffset(tr_torrent const* tor, tr_piece_index_t index, uint32_t offset, uint32_t length);
-
-void tr_torrentGetBlockLocation(tr_torrent const* tor, tr_block_index_t block, tr_piece_index_t* piece, uint32_t* offset,
-    uint32_t* length);
-
-void tr_torGetFileBlockRange(tr_torrent const* tor, tr_file_index_t const file, tr_block_index_t* first,
-    tr_block_index_t* last);
-
-void tr_torGetPieceBlockRange(tr_torrent const* tor, tr_piece_index_t const piece, tr_block_index_t* first,
-    tr_block_index_t* last);
-
-void tr_torrentInitFilePriority(tr_torrent* tor, tr_file_index_t fileIndex, tr_priority_t priority);
-
-void tr_torrentSetPieceChecked(tr_torrent* tor, tr_piece_index_t piece);
-
-void tr_torrentSetChecked(tr_torrent* tor, time_t when);
+tr_block_span_t tr_torGetFileBlockSpan(tr_torrent const* tor, tr_file_index_t file);
 
 void tr_torrentCheckSeedLimit(tr_torrent* tor);
 
 /** save a torrent's .resume file if it's changed since the last time it was saved */
 void tr_torrentSave(tr_torrent* tor);
 
-void tr_torrentSetLocalError(tr_torrent* tor, char const* fmt, ...) TR_GNUC_PRINTF(2, 3);
-
-void tr_torrentSetDateAdded(tr_torrent* torrent, time_t addedDate);
-
-void tr_torrentSetDateActive(tr_torrent* torrent, time_t activityDate);
-
-void tr_torrentSetDateDone(tr_torrent* torrent, time_t doneDate);
-
-typedef enum
+enum tr_verify_state : uint8_t
 {
     TR_VERIFY_NONE,
     TR_VERIFY_WAIT,
     TR_VERIFY_NOW
-}
-tr_verify_state;
-
-void tr_torrentSetVerifyState(tr_torrent* tor, tr_verify_state state);
+};
 
 tr_torrent_activity tr_torrentGetActivity(tr_torrent const* tor);
 
 struct tr_incomplete_metadata;
 
 /** @brief Torrent object */
-struct tr_torrent
+struct tr_torrent final : public tr_completion::torrent_view
 {
-    tr_session* session;
-    tr_info info;
+public:
+    explicit tr_torrent(tr_torrent_metainfo&& tm)
+        : metainfo_{ std::move(tm) }
+        , completion{ this, &this->metainfo_.blockInfo() }
+    {
+    }
 
-    int magicNumber;
+    ~tr_torrent() override = default;
 
-    tr_stat_errtype error;
-    char errorString[128];
-    char errorTracker[128];
+    void setLocation(
+        std::string_view location,
+        bool move_from_current_location,
+        double volatile* setme_progress,
+        int volatile* setme_state);
 
-    uint8_t obfuscatedHash[SHA_DIGEST_LENGTH];
+    void renamePath(
+        std::string_view oldpath,
+        std::string_view newname,
+        tr_torrent_rename_done_func callback,
+        void* callback_user_data);
 
-    /* Used when the torrent has been created with a magnet link
-     * and we're in the process of downloading the metainfo from
-     * other peers */
-    struct tr_incomplete_metadata* incompleteMetadata;
+    tr_sha1_digest_t pieceHash(tr_piece_index_t i) const
+    {
+        return metainfo_.pieceHash(i);
+    }
+
+    // these functions should become private when possible,
+    // but more refactoring is needed before that can happen
+    // because much of tr_torrent's impl is in the non-member C bindings
+
+    void setMetainfo(tr_torrent_metainfo const& tm);
+
+    [[nodiscard]] auto unique_lock() const
+    {
+        return session->unique_lock();
+    }
+
+    /// SPEED LIMIT
+
+    void setSpeedLimitBps(tr_direction, unsigned int Bps);
+
+    [[nodiscard]] unsigned int speedLimitBps(tr_direction) const;
+
+    /// BLOCK INFO
+
+    [[nodiscard]] constexpr auto const& blockInfo() const
+    {
+        return metainfo_.blockInfo();
+    }
+
+    [[nodiscard]] constexpr auto blockCount() const noexcept
+    {
+        return metainfo_.blockCount();
+    }
+    [[nodiscard]] auto byteLoc(uint64_t byte) const
+    {
+        return metainfo_.byteLoc(byte);
+    }
+    [[nodiscard]] auto blockLoc(tr_block_index_t block) const
+    {
+        return metainfo_.blockLoc(block);
+    }
+    [[nodiscard]] auto pieceLoc(tr_piece_index_t piece, uint32_t offset = 0, uint32_t length = 0) const
+    {
+        return metainfo_.pieceLoc(piece, offset, length);
+    }
+    [[nodiscard]] constexpr auto blockSize(tr_block_index_t block) const noexcept
+    {
+        return metainfo_.blockSize(block);
+    }
+    [[nodiscard]] auto blockSpanForPiece(tr_piece_index_t piece) const
+    {
+        return metainfo_.blockSpanForPiece(piece);
+    }
+    [[nodiscard]] constexpr auto pieceCount() const noexcept
+    {
+        return metainfo_.pieceCount();
+    }
+    [[nodiscard]] constexpr auto pieceSize() const noexcept
+    {
+        return metainfo_.pieceSize();
+    }
+    [[nodiscard]] constexpr auto pieceSize(tr_piece_index_t piece) const noexcept
+    {
+        return metainfo_.pieceSize(piece);
+    }
+    [[nodiscard]] constexpr auto totalSize() const noexcept
+    {
+        return metainfo_.totalSize();
+    }
+
+    /// COMPLETION
+
+    [[nodiscard]] auto leftUntilDone() const
+    {
+        return completion.leftUntilDone();
+    }
+
+    [[nodiscard]] auto sizeWhenDone() const
+    {
+        return completion.sizeWhenDone();
+    }
+
+    [[nodiscard]] auto hasMetainfo() const noexcept
+    {
+        return completion.hasMetainfo();
+    }
+
+    [[nodiscard]] auto hasAll() const noexcept
+    {
+        return completion.hasAll();
+    }
+
+    [[nodiscard]] auto hasNone() const noexcept
+    {
+        return completion.hasNone();
+    }
+
+    [[nodiscard]] auto hasPiece(tr_piece_index_t piece) const
+    {
+        return completion.hasPiece(piece);
+    }
+
+    [[nodiscard]] auto hasBlock(tr_block_index_t block) const
+    {
+        return completion.hasBlock(block);
+    }
+
+    [[nodiscard]] auto countMissingBlocksInPiece(tr_piece_index_t piece) const
+    {
+        return completion.countMissingBlocksInPiece(piece);
+    }
+
+    [[nodiscard]] auto countMissingBytesInPiece(tr_piece_index_t piece) const
+    {
+        return completion.countMissingBytesInPiece(piece);
+    }
+
+    [[nodiscard]] auto hasTotal() const
+    {
+        return completion.hasTotal();
+    }
+
+    [[nodiscard]] auto createPieceBitfield() const
+    {
+        return completion.createPieceBitfield();
+    }
+
+    [[nodiscard]] constexpr bool isDone() const noexcept
+    {
+        return completeness != TR_LEECH;
+    }
+
+    [[nodiscard]] constexpr bool isSeed() const noexcept
+    {
+        return completeness == TR_SEED;
+    }
+
+    [[nodiscard]] constexpr bool isPartialSeed() const noexcept
+    {
+        return completeness == TR_PARTIAL_SEED;
+    }
+
+    [[nodiscard]] tr_bitfield const& blocks() const noexcept
+    {
+        return completion.blocks();
+    }
+
+    void amountDoneBins(float* tab, int n_tabs) const
+    {
+        return completion.amountDone(tab, n_tabs);
+    }
+
+    void setBlocks(tr_bitfield blocks);
+
+    void setHasPiece(tr_piece_index_t piece, bool has)
+    {
+        completion.setHasPiece(piece, has);
+    }
+
+    /// FILE <-> PIECE
+
+    [[nodiscard]] auto piecesInFile(tr_file_index_t file) const
+    {
+        return fpm_.pieceSpan(file);
+    }
+
+    [[nodiscard]] auto fileOffset(tr_block_info::Location loc) const
+    {
+        return fpm_.fileOffset(loc.byte);
+    }
+
+    [[nodiscard]] auto byteSpan(tr_file_index_t file) const
+    {
+        return fpm_.byteSpan(file);
+    }
+
+    /// WANTED
+
+    [[nodiscard]] bool pieceIsWanted(tr_piece_index_t piece) const final
+    {
+        return files_wanted_.pieceWanted(piece);
+    }
+
+    [[nodiscard]] bool fileIsWanted(tr_file_index_t file) const
+    {
+        return files_wanted_.fileWanted(file);
+    }
+
+    void initFilesWanted(tr_file_index_t const* files, size_t n_files, bool wanted)
+    {
+        setFilesWanted(files, n_files, wanted, /*is_bootstrapping*/ true);
+    }
+
+    void setFilesWanted(tr_file_index_t const* files, size_t n_files, bool wanted)
+    {
+        setFilesWanted(files, n_files, wanted, /*is_bootstrapping*/ false);
+    }
+
+    void recheckCompleteness(); // TODO(ckerr): should be private
+
+    /// PRIORITIES
+
+    [[nodiscard]] tr_priority_t piecePriority(tr_piece_index_t piece) const
+    {
+        return file_priorities_.piecePriority(piece);
+    }
+
+    void setFilePriorities(tr_file_index_t const* files, tr_file_index_t fileCount, tr_priority_t priority)
+    {
+        file_priorities_.set(files, fileCount, priority);
+        setDirty();
+    }
+
+    void setFilePriority(tr_file_index_t file, tr_priority_t priority)
+    {
+        file_priorities_.set(file, priority);
+        setDirty();
+    }
+
+    /// LOCATION
+
+    [[nodiscard]] constexpr tr_interned_string currentDir() const noexcept
+    {
+        return this->current_dir;
+    }
+
+    [[nodiscard]] constexpr tr_interned_string downloadDir() const noexcept
+    {
+        return this->download_dir;
+    }
+
+    [[nodiscard]] constexpr tr_interned_string incompleteDir() const noexcept
+    {
+        return this->incomplete_dir;
+    }
+
+    /// METAINFO - FILES
+
+    [[nodiscard]] tr_file_index_t fileCount() const noexcept
+    {
+        return metainfo_.fileCount();
+    }
+
+    [[nodiscard]] std::string const& fileSubpath(tr_file_index_t i) const
+    {
+        return metainfo_.fileSubpath(i);
+    }
+
+    [[nodiscard]] auto fileSize(tr_file_index_t i) const
+    {
+        return metainfo_.fileSize(i);
+    }
+
+    void setFileSubpath(tr_file_index_t i, std::string_view subpath)
+    {
+        metainfo_.setFileSubpath(i, subpath);
+    }
+
+    [[nodiscard]] std::optional<tr_torrent_files::FoundFile> findFile(tr_file_index_t file_index) const;
+
+    [[nodiscard]] bool hasAnyLocalData() const;
+
+    /// METAINFO - TRACKERS
+
+    [[nodiscard]] auto const& announceList() const noexcept
+    {
+        return metainfo_.announceList();
+    }
+
+    [[nodiscard]] auto& announceList() noexcept
+    {
+        return metainfo_.announceList();
+    }
+
+    [[nodiscard]] auto trackerCount() const noexcept
+    {
+        return std::size(this->announceList());
+    }
+
+    [[nodiscard]] auto const& tracker(size_t i) const
+    {
+        return this->announceList().at(i);
+    }
+
+    [[nodiscard]] auto trackerList() const
+    {
+        return this->announceList().toString();
+    }
+
+    bool setTrackerList(std::string_view text);
+
+    /// METAINFO - WEBSEEDS
+
+    [[nodiscard]] auto webseedCount() const noexcept
+    {
+        return metainfo_.webseedCount();
+    }
+
+    [[nodiscard]] auto const& webseed(size_t i) const
+    {
+        return metainfo_.webseed(i);
+    }
+
+    /// METAINFO - OTHER
+
+    void setName(std::string_view name)
+    {
+        metainfo_.setName(name);
+    }
+
+    [[nodiscard]] auto const& name() const noexcept
+    {
+        return metainfo_.name();
+    }
+
+    [[nodiscard]] auto const& infoHash() const noexcept
+    {
+        return metainfo_.infoHash();
+    }
+
+    [[nodiscard]] auto isPrivate() const noexcept
+    {
+        return metainfo_.isPrivate();
+    }
+
+    [[nodiscard]] auto isPublic() const noexcept
+    {
+        return !this->isPrivate();
+    }
+
+    [[nodiscard]] auto const& infoHashString() const noexcept
+    {
+        return metainfo_.infoHashString();
+    }
+
+    [[nodiscard]] auto dateCreated() const noexcept
+    {
+        return metainfo_.dateCreated();
+    }
+
+    [[nodiscard]] auto torrentFile() const
+    {
+        return metainfo_.torrentFile(this->session->torrent_dir);
+    }
+
+    [[nodiscard]] auto magnetFile() const
+    {
+        return metainfo_.magnetFile(this->session->torrent_dir);
+    }
+
+    [[nodiscard]] auto resumeFile() const
+    {
+        return metainfo_.resumeFile(this->session->resume_dir);
+    }
+
+    [[nodiscard]] auto magnet() const
+    {
+        return metainfo_.magnet();
+    }
+
+    [[nodiscard]] auto const& comment() const noexcept
+    {
+        return metainfo_.comment();
+    }
+
+    [[nodiscard]] auto const& creator() const noexcept
+    {
+        return metainfo_.creator();
+    }
+
+    [[nodiscard]] auto const& source() const noexcept
+    {
+        return metainfo_.source();
+    }
+
+    [[nodiscard]] auto infoDictSize() const noexcept
+    {
+        return metainfo_.infoDictSize();
+    }
+
+    [[nodiscard]] auto infoDictOffset() const noexcept
+    {
+        return metainfo_.infoDictOffset();
+    }
+
+    /// METAINFO - PIECE CHECKSUMS
+
+    [[nodiscard]] bool isPieceChecked(tr_piece_index_t piece) const
+    {
+        return checked_pieces_.test(piece);
+    }
+
+    [[nodiscard]] bool checkPiece(tr_piece_index_t piece);
+
+    [[nodiscard]] bool ensurePieceIsChecked(tr_piece_index_t piece);
+
+    void initCheckedPieces(tr_bitfield const& checked, time_t const* mtimes /*fileCount()*/);
+
+    ///
+
+    [[nodiscard]] constexpr auto isQueued() const noexcept
+    {
+        return this->is_queued;
+    }
+
+    [[nodiscard]] constexpr auto queueDirection() const noexcept
+    {
+        return this->isDone() ? TR_UP : TR_DOWN;
+    }
+
+    [[nodiscard]] auto allowsPex() const noexcept
+    {
+        return this->isPublic() && this->session->isPexEnabled;
+    }
+
+    [[nodiscard]] auto allowsDht() const
+    {
+        return this->isPublic() && tr_sessionAllowsDHT(this->session);
+    }
+
+    [[nodiscard]] auto allowsLpd() const // local peer discovery
+    {
+        return this->isPublic() && tr_sessionAllowsLPD(this->session);
+    }
+
+    [[nodiscard]] bool isPieceTransferAllowed(tr_direction direction) const;
+
+    [[nodiscard]] bool clientCanDownload() const
+    {
+        return this->isPieceTransferAllowed(TR_PEER_TO_CLIENT);
+    }
+
+    [[nodiscard]] bool clientCanUpload() const
+    {
+        return this->isPieceTransferAllowed(TR_CLIENT_TO_PEER);
+    }
+
+    void setLocalError(std::string_view errmsg)
+    {
+        this->error = TR_STAT_LOCAL_ERROR;
+        this->error_announce_url = TR_KEY_NONE;
+        this->error_string = errmsg;
+    }
+
+    void setDownloadDir(std::string_view path)
+    {
+        download_dir = path;
+        markEdited();
+        setDirty();
+        refreshCurrentDir();
+    }
+
+    void refreshCurrentDir();
+
+    void setVerifyState(tr_verify_state state);
+
+    [[nodiscard]] constexpr auto verifyState() const noexcept
+    {
+        return verify_state_;
+    }
+
+    constexpr void setVerifyProgress(float f) noexcept
+    {
+        verify_progress_ = f;
+    }
+
+    [[nodiscard]] constexpr std::optional<float> verifyProgress() const noexcept
+    {
+        if (verify_state_ == TR_VERIFY_NOW)
+        {
+            return verify_progress_;
+        }
+
+        return {};
+    }
+
+    [[nodiscard]] constexpr auto id() const noexcept
+    {
+        return unique_id_;
+    }
+
+    void setDateActive(time_t t);
+
+    void setLabels(std::vector<tr_quark> const& new_labels);
+
+    /** Return the mime-type (e.g. "audio/x-flac") that matches more of the
+        torrent's content than any other mime-type. */
+    [[nodiscard]] std::string_view primaryMimeType() const;
+
+    void setDirty()
+    {
+        this->isDirty = true;
+    }
+
+    void markEdited();
+    void markChanged();
+
+    void setBandwidthGroup(std::string_view group_name) noexcept;
+
+    [[nodiscard]] constexpr tr_interned_string const& bandwidthGroup() const noexcept
+    {
+        return bandwidth_group_;
+    }
+
+    tr_torrent_metainfo metainfo_;
+
+    tr_bandwidth bandwidth_;
+
+    tr_stat stats = {};
+
+    // TODO(ckerr): make private once some of torrent.cc's `tr_torrentFoo()` methods are member functions
+    tr_completion completion;
+
+    // true iff the piece was verified more recently than any of the piece's
+    // files' mtimes (file_mtimes_). If checked_pieces_.test(piece) is false,
+    // it means that piece needs to be checked before its data is used.
+    tr_bitfield checked_pieces_ = tr_bitfield{ 0 };
+
+    tr_file_piece_map fpm_ = tr_file_piece_map{ metainfo_ };
+    tr_file_priorities file_priorities_{ &fpm_ };
+    tr_files_wanted files_wanted_{ &fpm_ };
+
+    std::string error_string;
+
+    using labels_t = std::vector<tr_quark>;
+    labels_t labels;
+
+    // when Transmission thinks the torrent's files were last changed
+    std::vector<time_t> file_mtimes_;
+
+    tr_sha1_digest_t obfuscated_hash = {};
 
     /* If the initiator of the connection receives a handshake in which the
      * peer_id does not match the expected peerid, then the initiator is
@@ -133,336 +647,151 @@ struct tr_torrent
      * peer_id that was registered by the peer. The peer_id from the tracker
      * and in the handshake are expected to match.
      */
-    unsigned char peer_id[PEER_ID_LEN + 1];
+    tr_peer_id_t peer_id_;
 
-    time_t peer_id_creation_time;
+    tr_session* session = nullptr;
 
-    /* Where the files will be when it's complete */
-    char* downloadDir;
+    tr_torrent_announcer* torrent_announcer = nullptr;
 
-    /* Where the files are when the torrent is incomplete */
-    char* incompleteDir;
+    tr_swarm* swarm = nullptr;
 
-    /* Length, in bytes, of the "info" dict in the .torrent file. */
-    size_t infoDictLength;
+    /* Used when the torrent has been created with a magnet link
+     * and we're in the process of downloading the metainfo from
+     * other peers */
+    struct tr_incomplete_metadata* incompleteMetadata = nullptr;
 
-    /* Offset, in bytes, of the beginning of the "info" dict in the .torrent file.
-     *
-     * Used by the torrent-magnet code for serving metainfo to peers.
-     * This field is lazy-generated and might not be initialized yet. */
-    size_t infoDictOffset;
+    tr_torrent_metadata_func metadata_func = nullptr;
+    void* metadata_func_user_data = nullptr;
 
-    /* Where the files are now.
-     * This pointer will be equal to downloadDir or incompleteDir */
-    char const* currentDir;
+    tr_torrent_completeness_func completeness_func = nullptr;
+    void* completeness_func_user_data = nullptr;
 
-    /* How many bytes we ask for per request */
-    uint32_t blockSize;
-    tr_block_index_t blockCount;
+    tr_torrent_ratio_limit_hit_func ratio_limit_hit_func = nullptr;
+    void* ratio_limit_hit_func_user_data = nullptr;
 
-    uint32_t lastBlockSize;
-    uint32_t lastPieceSize;
+    tr_torrent_idle_limit_hit_func idle_limit_hit_func = nullptr;
+    void* idle_limit_hit_func_user_data = nullptr;
 
-    uint16_t blockCountInPiece;
-    uint16_t blockCountInLastPiece;
+    void* queue_started_user_data = nullptr;
+    void (*queue_started_callback)(tr_torrent*, void* queue_started_user_data) = nullptr;
 
-    struct tr_completion completion;
+    time_t peer_id_creation_time_ = 0;
 
-    tr_completeness completeness;
+    time_t dhtAnnounceAt = 0;
+    time_t dhtAnnounce6At = 0;
 
-    struct tr_torrent_tiers* tiers;
+    time_t lpdAnnounceAt = 0;
 
-    time_t dhtAnnounceAt;
-    time_t dhtAnnounce6At;
-    bool dhtAnnounceInProgress;
-    bool dhtAnnounce6InProgress;
+    time_t activityDate = 0;
+    time_t addedDate = 0;
+    time_t anyDate = 0;
+    time_t doneDate = 0;
+    time_t editDate = 0;
+    time_t startDate = 0;
 
-    time_t lpdAnnounceAt;
+    time_t lastStatTime = 0;
 
-    uint64_t downloadedCur;
-    uint64_t downloadedPrev;
-    uint64_t uploadedCur;
-    uint64_t uploadedPrev;
-    uint64_t corruptCur;
-    uint64_t corruptPrev;
+    uint64_t downloadedCur = 0;
+    uint64_t downloadedPrev = 0;
+    uint64_t uploadedCur = 0;
+    uint64_t uploadedPrev = 0;
+    uint64_t corruptCur = 0;
+    uint64_t corruptPrev = 0;
 
-    uint64_t etaDLSpeedCalculatedAt;
-    unsigned int etaDLSpeed_Bps;
-    uint64_t etaULSpeedCalculatedAt;
-    unsigned int etaULSpeed_Bps;
+    uint64_t etaSpeedCalculatedAt = 0;
 
-    time_t activityDate;
-    time_t addedDate;
-    time_t anyDate;
-    time_t doneDate;
-    time_t editDate;
-    time_t startDate;
+    tr_interned_string error_announce_url;
 
-    int secondsDownloading;
-    int secondsSeeding;
+    // Where the files are when the torrent is complete.
+    tr_interned_string download_dir;
 
-    int queuePosition;
+    // Where the files are when the torrent is incomplete.
+    // a value of TR_KEY_NONE indicates the 'incomplete_dir' feature is unused
+    tr_interned_string incomplete_dir;
 
-    tr_torrent_metadata_func metadata_func;
-    void* metadata_func_user_data;
+    // Where the files are now.
+    // Will equal either download_dir or incomplete_dir
+    tr_interned_string current_dir;
 
-    tr_torrent_completeness_func completeness_func;
-    void* completeness_func_user_data;
+    tr_stat_errtype error = TR_STAT_OK;
 
-    tr_torrent_ratio_limit_hit_func ratio_limit_hit_func;
-    void* ratio_limit_hit_func_user_data;
+    unsigned int etaSpeed_Bps = 0;
 
-    tr_torrent_idle_limit_hit_func idle_limit_hit_func;
-    void* idle_limit_hit_func_user_data;
+    int secondsDownloading = 0;
+    int secondsSeeding = 0;
 
-    void* queue_started_user_data;
-    void (* queue_started_callback)(tr_torrent*, void* queue_started_user_data);
+    int queuePosition = 0;
 
-    bool isRunning;
-    bool isStopping;
-    bool isDeleting;
-    bool startAfterVerify;
-    bool isDirty;
-    bool isQueued;
+    tr_torrent_id_t unique_id_ = 0;
 
-    bool magnetVerify;
+    tr_completeness completeness = TR_LEECH;
 
-    bool infoDictOffsetIsCached;
+    float desiredRatio = 0.0F;
+    tr_ratiolimit ratioLimitMode = TR_RATIOLIMIT_GLOBAL;
 
-    uint16_t maxConnectedPeers;
+    tr_idlelimit idleLimitMode = TR_IDLELIMIT_GLOBAL;
 
-    tr_verify_state verifyState;
+    uint16_t max_connected_peers = TR_DEFAULT_PEER_LIMIT_TORRENT;
 
-    time_t lastStatTime;
-    tr_stat stats;
+    uint16_t idleLimitMinutes = 0;
 
-    tr_torrent* next;
+    bool finishedSeedingByIdle = false;
 
-    int uniqueId;
+    bool isDeleting = false;
+    bool isDirty = false;
+    bool is_queued = false;
+    bool isRunning = false;
+    bool isStopping = false;
+    bool startAfterVerify = false;
 
-    struct tr_bandwidth bandwidth;
+    bool magnetVerify = false;
 
-    struct tr_swarm* swarm;
+private:
+    tr_verify_state verify_state_ = TR_VERIFY_NONE;
+    float verify_progress_ = -1;
+    tr_interned_string bandwidth_group_;
 
-    float desiredRatio;
-    tr_ratiolimit ratioLimitMode;
+    void setFilesWanted(tr_file_index_t const* files, size_t n_files, bool wanted, bool is_bootstrapping)
+    {
+        auto const lock = unique_lock();
 
-    uint16_t idleLimitMinutes;
-    tr_idlelimit idleLimitMode;
-    bool finishedSeedingByIdle;
+        files_wanted_.set(files, n_files, wanted);
+        completion.invalidateSizeWhenDone();
 
-    tr_ptrArray labels;
+        if (!is_bootstrapping)
+        {
+            setDirty();
+            recheckCompleteness();
+        }
+    }
 };
-
-static inline tr_torrent* tr_torrentNext(tr_session* session, tr_torrent* current)
-{
-    return current != NULL ? current->next : session->torrentList;
-}
-
-/* what piece index is this block in? */
-static inline tr_piece_index_t tr_torBlockPiece(tr_torrent const* tor, tr_block_index_t const block)
-{
-    return block / tor->blockCountInPiece;
-}
-
-/* how many bytes are in this piece? */
-static inline uint32_t tr_torPieceCountBytes(tr_torrent const* tor, tr_piece_index_t const piece)
-{
-    return piece + 1 == tor->info.pieceCount ? tor->lastPieceSize : tor->info.pieceSize;
-}
-
-/* how many bytes are in this block? */
-static inline uint32_t tr_torBlockCountBytes(tr_torrent const* tor, tr_block_index_t const block)
-{
-    return block + 1 == tor->blockCount ? tor->lastBlockSize : tor->blockSize;
-}
-
-static inline void tr_torrentLock(tr_torrent const* tor)
-{
-    tr_sessionLock(tor->session);
-}
-
-static inline bool tr_torrentIsLocked(tr_torrent const* tor)
-{
-    return tr_sessionIsLocked(tor->session);
-}
-
-static inline void tr_torrentUnlock(tr_torrent const* tor)
-{
-    tr_sessionUnlock(tor->session);
-}
-
-static inline bool tr_torrentExists(tr_session const* session, uint8_t const* torrentHash)
-{
-    return tr_torrentFindFromHash((tr_session*)session, torrentHash) != NULL;
-}
-
-static inline tr_completeness tr_torrentGetCompleteness(tr_torrent const* tor)
-{
-    return tor->completeness;
-}
-
-static inline bool tr_torrentIsSeed(tr_torrent const* tor)
-{
-    return tr_torrentGetCompleteness(tor) != TR_LEECH;
-}
-
-static inline bool tr_torrentIsPrivate(tr_torrent const* tor)
-{
-    return tor != NULL && tor->info.isPrivate;
-}
-
-static inline bool tr_torrentAllowsPex(tr_torrent const* tor)
-{
-    return tor != NULL && tor->session->isPexEnabled && !tr_torrentIsPrivate(tor);
-}
-
-static inline bool tr_torrentAllowsDHT(tr_torrent const* tor)
-{
-    return tor != NULL && tr_sessionAllowsDHT(tor->session) && !tr_torrentIsPrivate(tor);
-}
-
-static inline bool tr_torrentAllowsLPD(tr_torrent const* tor)
-{
-    return tor != NULL && tr_sessionAllowsLPD(tor->session) && !tr_torrentIsPrivate(tor);
-}
 
 /***
 ****
 ***/
 
-enum
+constexpr bool tr_isTorrent(tr_torrent const* tor)
 {
-    TORRENT_MAGIC_NUMBER = 95549
-};
-
-static inline bool tr_isTorrent(tr_torrent const* tor)
-{
-    return tor != NULL && tor->magicNumber == TORRENT_MAGIC_NUMBER && tr_isSession(tor->session);
+    return tor != nullptr && tr_isSession(tor->session);
 }
-
-/* set a flag indicating that the torrent's .resume file
- * needs to be saved when the torrent is closed */
-static inline void tr_torrentSetDirty(tr_torrent* tor)
-{
-    TR_ASSERT(tr_isTorrent(tor));
-
-    tor->isDirty = true;
-}
-
-/* note that the torrent's tr_info just changed */
-static inline void tr_torrentMarkEdited(tr_torrent* tor)
-{
-    TR_ASSERT(tr_isTorrent(tor));
-
-    tor->editDate = tr_time();
-}
-
-uint32_t tr_getBlockSize(uint32_t pieceSize);
 
 /**
  * Tell the tr_torrent that it's gotten a block
  */
 void tr_torrentGotBlock(tr_torrent* tor, tr_block_index_t blockIndex);
 
-/**
- * @brief Like tr_torrentFindFile(), but splits the filename into base and subpath;
- *
- * If the file is found, "tr_buildPath(base, subpath, NULL)"
- * will generate the complete filename.
- *
- * @return true if the file is found, false otherwise.
- *
- * @param base if the torrent is found, this will be either
- *             tor->downloadDir or tor->incompleteDir
- * @param subpath on success, this pointer is assigned a newly-allocated
- *                string holding the second half of the filename.
- */
-bool tr_torrentFindFile2(tr_torrent const*, tr_file_index_t fileNo, char const** base, char** subpath, time_t* mtime);
+tr_peer_id_t const& tr_torrentGetPeerId(tr_torrent* tor);
 
-/* Returns a newly-allocated version of the tr_file.name string
- * that's been modified to denote that it's not a complete file yet.
- * In the current implementation this is done by appending ".part"
- * a la Firefox. */
-char* tr_torrentBuildPartial(tr_torrent const*, tr_file_index_t fileNo);
+tr_torrent_metainfo tr_ctorStealMetainfo(tr_ctor* ctor);
 
-/* for when the info dict has been fundamentally changed wrt files,
- * piece size, etc. such as in BEP 9 where peers exchange metadata */
-void tr_torrentGotNewInfoDict(tr_torrent* tor);
+bool tr_ctorSetMetainfoFromFile(tr_ctor* ctor, std::string_view filename, tr_error** error = nullptr);
+bool tr_ctorSetMetainfoFromMagnetLink(tr_ctor* ctor, std::string_view filename, tr_error** error = nullptr);
+void tr_ctorSetLabels(tr_ctor* ctor, tr_quark const* labels, size_t n_labels);
+tr_torrent::labels_t const& tr_ctorGetLabels(tr_ctor const* ctor);
 
-void tr_torrentSetSpeedLimit_Bps(tr_torrent*, tr_direction, unsigned int Bps);
-unsigned int tr_torrentGetSpeedLimit_Bps(tr_torrent const*, tr_direction);
-
-/**
- * @return true if this piece needs to be tested
- */
-bool tr_torrentPieceNeedsCheck(tr_torrent const* tor, tr_piece_index_t pieceIndex);
-
-/**
- * @brief Test a piece against its info dict checksum
- * @return true if the piece's passes the checksum test
- */
-bool tr_torrentCheckPiece(tr_torrent* tor, tr_piece_index_t pieceIndex);
-
-time_t tr_torrentGetFileMTime(tr_torrent const* tor, tr_file_index_t i);
-
-uint64_t tr_torrentGetCurrentSizeOnDisk(tr_torrent const* tor);
-
-bool tr_torrentIsStalled(tr_torrent const* tor);
-
-unsigned char const* tr_torrentGetPeerId(tr_torrent* tor);
-
-static inline uint64_t tr_torrentGetLeftUntilDone(tr_torrent const* tor)
-{
-    return tr_cpLeftUntilDone(&tor->completion);
-}
-
-static inline bool tr_torrentHasAll(tr_torrent const* tor)
-{
-    return tr_cpHasAll(&tor->completion);
-}
-
-static inline bool tr_torrentHasNone(tr_torrent const* tor)
-{
-    return tr_cpHasNone(&tor->completion);
-}
-
-static inline bool tr_torrentPieceIsComplete(tr_torrent const* tor, tr_piece_index_t i)
-{
-    return tr_cpPieceIsComplete(&tor->completion, i);
-}
-
-static inline bool tr_torrentBlockIsComplete(tr_torrent const* tor, tr_block_index_t i)
-{
-    return tr_cpBlockIsComplete(&tor->completion, i);
-}
-
-static inline size_t tr_torrentMissingBlocksInPiece(tr_torrent const* tor, tr_piece_index_t i)
-{
-    return tr_cpMissingBlocksInPiece(&tor->completion, i);
-}
-
-static inline size_t tr_torrentMissingBytesInPiece(tr_torrent const* tor, tr_piece_index_t i)
-{
-    return tr_cpMissingBytesInPiece(&tor->completion, i);
-}
-
-static inline void* tr_torrentCreatePieceBitfield(tr_torrent const* tor, size_t* byte_count)
-{
-    return tr_cpCreatePieceBitfield(&tor->completion, byte_count);
-}
-
-static inline uint64_t tr_torrentHaveTotal(tr_torrent const* tor)
-{
-    return tr_cpHaveTotal(&tor->completion);
-}
-
-static inline bool tr_torrentIsQueued(tr_torrent const* tor)
-{
-    return tor->isQueued;
-}
-
-static inline tr_direction tr_torrentGetQueueDirection(tr_torrent const* tor)
-{
-    return tr_torrentIsSeed(tor) ? TR_UP : TR_DOWN;
-}
+#define tr_logAddCriticalTor(tor, msg) tr_logAddCritical(msg, (tor)->name())
+#define tr_logAddErrorTor(tor, msg) tr_logAddError(msg, (tor)->name())
+#define tr_logAddWarnTor(tor, msg) tr_logAddWarn(msg, (tor)->name())
+#define tr_logAddInfoTor(tor, msg) tr_logAddInfo(msg, (tor)->name())
+#define tr_logAddDebugTor(tor, msg) tr_logAddDebug(msg, (tor)->name())
+#define tr_logAddTraceTor(tor, msg) tr_logAddTrace(msg, (tor)->name())

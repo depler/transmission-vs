@@ -1,10 +1,7 @@
-/*
- * This file Copyright (C) 2007-2014 Mnemosyne LLC
- *
- * It may be used under the GNU GPL versions 2 or 3
- * or any future license endorsed by Mnemosyne LLC.
- *
- */
+// This file Copyright © 2007-2022 Mnemosyne LLC.
+// It may be used under GPLv2 (SPDX: GPL-2.0), GPLv3 (SPDX: GPL-3.0),
+// or any future license endorsed by Mnemosyne LLC.
+// License text can be found in the licenses/ folder.
 
 #pragma once
 
@@ -12,13 +9,29 @@
 #error only libtransmission should #include this header.
 #endif
 
-/**
-**/
+#include <functional>
+#include <tuple>
+#include <utility>
 
-void tr_eventInit(tr_session*);
+#include "tr-macros.h"
 
-void tr_eventClose(tr_session*);
+struct tr_session;
 
-bool tr_amInEventThread(tr_session const*);
+void tr_eventInit(tr_session* session);
 
-void tr_runInEventThread(tr_session*, void (* func)(void*), void* user_data);
+void tr_eventClose(tr_session* session);
+
+bool tr_amInEventThread(tr_session const* session);
+
+void tr_runInEventThread(tr_session* session, std::function<void(void)>&& func);
+
+template<typename Func, typename... Args>
+void tr_runInEventThread(tr_session* session, Func&& func, Args&&... args)
+{
+    tr_runInEventThread(
+        session,
+        std::function<void(void)>{ [func = std::forward<Func&&>(func), args = std::make_tuple(std::forward<Args>(args)...)]()
+                                   {
+                                       std::apply(std::move(func), std::move(args));
+                                   } });
+}

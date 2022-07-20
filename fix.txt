@@ -1,2 +1,0 @@
-code\file-win32.c
-static int fix_slashes(wchar_t* const wpath, int extra_chars_before, int extra_chars_after, int* real_result_size)

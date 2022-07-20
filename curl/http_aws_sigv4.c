@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2022, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -17,6 +17,8 @@
  *
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
 
@@ -87,7 +89,7 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
   struct tm tm;
   char timestamp[17];
   char date[9];
-  const char *content_type = Curl_checkheaders(data, "Content-Type");
+  const char *content_type = Curl_checkheaders(data, STRCONST("Content-Type"));
   char *canonical_headers = NULL;
   char *signed_headers = NULL;
   Curl_HttpReq httpreq;
@@ -110,7 +112,7 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
   DEBUGASSERT(!proxy);
   (void)proxy;
 
-  if(Curl_checkheaders(data, "Authorization")) {
+  if(Curl_checkheaders(data, STRCONST("Authorization"))) {
     /* Authorization already present, Bailing out */
     return CURLE_OK;
   }
@@ -202,12 +204,12 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
   if(!service) {
     tmp0 = hostname;
     tmp1 = strchr(tmp0, '.');
-    len = tmp1 - tmp0;
-    if(!tmp1 || len < 1) {
+    if(!tmp1) {
       infof(data, "service missing in parameters or hostname");
       ret = CURLE_URL_MALFORMAT;
       goto fail;
     }
+    len = tmp1 - tmp0;
     service = Curl_memdup(tmp0, len + 1);
     if(!service) {
       goto fail;
@@ -217,12 +219,12 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
     if(!region) {
       tmp0 = tmp1 + 1;
       tmp1 = strchr(tmp0, '.');
-      len = tmp1 - tmp0;
-      if(!tmp1 || len < 1) {
+      if(!tmp1) {
         infof(data, "region missing in parameters or hostname");
         ret = CURLE_URL_MALFORMAT;
         goto fail;
       }
+      len = tmp1 - tmp0;
       region = Curl_memdup(tmp0, len + 1);
       if(!region) {
         goto fail;
@@ -286,8 +288,11 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
     post_data_len = strlen(post_data);
   else
     post_data_len = (size_t)data->set.postfieldsize;
-  Curl_sha256it(sha_hash,
-                (const unsigned char *) post_data, post_data_len);
+  if(Curl_sha256it(sha_hash, (const unsigned char *) post_data,
+                   post_data_len)) {
+    goto fail;
+  }
+
   sha256_to_hex(sha_hex, sha_hash, sizeof(sha_hex));
 
   Curl_http_method(data, conn, &method, &httpreq);
@@ -320,8 +325,11 @@ CURLcode Curl_output_aws_sigv4(struct Curl_easy *data, bool proxy)
     goto fail;
   }
 
-  Curl_sha256it(sha_hash, (unsigned char *) canonical_request,
-                strlen(canonical_request));
+  if(Curl_sha256it(sha_hash, (unsigned char *) canonical_request,
+                   strlen(canonical_request))) {
+    goto fail;
+  }
+
   sha256_to_hex(sha_hex, sha_hash, sizeof(sha_hex));
 
   /*
