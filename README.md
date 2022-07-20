@@ -18,6 +18,7 @@ Binary dependencies: none. Compatible with Windows Vista and newer.
 
 # Build
 Clone current repository and build **transmission.sln** file with Visual Studio 2022 or newer. No, additional black magic is not required. Yes, just that simple.
+Branch `master` contains latest changes from original transmission code (version 4 beta), for stable version see branch `v3`.
 
 # Config
 Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/should change following settings: `download-dir`, `incomplete-dir`. Some default values:
