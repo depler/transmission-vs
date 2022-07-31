@@ -8,7 +8,6 @@
 #include <cerrno>
 #include <cstring> /* memcpy */
 #include <ctime>
-#include <list>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -164,44 +163,46 @@ static char const* mimetype_guess(std::string_view path)
     return "application/octet-stream";
 }
 
-static void add_response(struct evhttp_request* req, tr_rpc_server* server, struct evbuffer* out, struct evbuffer* content)
+static evbuffer* make_response(struct evhttp_request* req, tr_rpc_server* server, std::string_view content)
 {
+    auto* const out = evbuffer_new();
+
     char const* key = "Accept-Encoding";
     char const* encoding = evhttp_find_header(req->input_headers, key);
-    bool const do_compress = encoding != nullptr && strstr(encoding, "gzip") != nullptr;
+    bool const do_compress = encoding != nullptr && tr_strvContains(encoding, "gzip"sv);
 
     if (!do_compress)
     {
-        evbuffer_add_buffer(out, content);
+        evbuffer_add(out, std::data(content), std::size(content));
     }
     else
     {
-        auto const* const content_ptr = evbuffer_pullup(content, -1);
-        size_t const content_len = evbuffer_get_length(content);
-        auto const max_compressed_len = libdeflate_deflate_compress_bound(server->compressor.get(), content_len);
+        auto const max_compressed_len = libdeflate_deflate_compress_bound(server->compressor.get(), std::size(content));
 
         struct evbuffer_iovec iovec[1];
-        evbuffer_reserve_space(out, std::max(content_len, max_compressed_len), iovec, 1);
+        evbuffer_reserve_space(out, std::max(std::size(content), max_compressed_len), iovec, 1);
 
         auto const compressed_len = libdeflate_gzip_compress(
             server->compressor.get(),
-            content_ptr,
-            content_len,
+            std::data(content),
+            std::size(content),
             iovec[0].iov_base,
             iovec[0].iov_len);
-        if (0 < compressed_len && compressed_len < content_len)
+        if (0 < compressed_len && compressed_len < std::size(content))
         {
             iovec[0].iov_len = compressed_len;
             evhttp_add_header(req->output_headers, "Content-Encoding", "gzip");
         }
         else
         {
-            std::copy_n(content_ptr, content_len, static_cast<char*>(iovec[0].iov_base));
-            iovec[0].iov_len = content_len;
+            std::copy(std::begin(content), std::end(content), static_cast<char*>(iovec[0].iov_base));
+            iovec[0].iov_len = std::size(content);
         }
 
         evbuffer_commit_space(out, iovec, 1);
     }
+
+    return out;
 }
 
 static void add_time_header(struct evkeyvalq* headers, char const* key, time_t now)
@@ -210,55 +211,37 @@ static void add_time_header(struct evkeyvalq* headers, char const* key, time_t n
     evhttp_add_header(headers, key, fmt::format("{:%a %b %d %T %Y%n}", fmt::gmtime(now)).c_str());
 }
 
-static void evbuffer_ref_cleanup_tr_free(void const* /*data*/, size_t /*datalen*/, void* extra)
-{
-    tr_free(extra);
-}
-
 static void serve_file(struct evhttp_request* req, tr_rpc_server* server, std::string_view filename)
 {
     if (req->type != EVHTTP_REQ_GET)
     {
         evhttp_add_header(req->output_headers, "Allow", "GET");
         send_simple_response(req, 405, nullptr);
+        return;
     }
-    else
+
+    auto content = std::vector<char>{};
+    tr_error* error = nullptr;
+    if (!tr_loadFile(filename, content, &error))
     {
-        auto file_len = size_t{};
-        tr_error* error = nullptr;
-        void* const file = tr_loadFile(filename, &file_len, &error);
-
-        if (file == nullptr)
-        {
-            auto const tmp = fmt::format(FMT_STRING("{:s} ({:s})"), filename, error->message);
-            send_simple_response(req, HTTP_NOTFOUND, tmp.c_str());
-            tr_error_free(error);
-        }
-        else
-        {
-            auto const now = tr_time();
-
-            auto* const content = evbuffer_new();
-            evbuffer_add_reference(content, file, file_len, evbuffer_ref_cleanup_tr_free, file);
-
-            auto* const out = evbuffer_new();
-            evhttp_add_header(req->output_headers, "Content-Type", mimetype_guess(filename));
-            add_time_header(req->output_headers, "Date", now);
-            add_time_header(req->output_headers, "Expires", now + (24 * 60 * 60));
-            add_response(req, server, out, content);
-            evhttp_send_reply(req, HTTP_OK, "OK", out);
-
-            evbuffer_free(out);
-            evbuffer_free(content);
-        }
+        send_simple_response(req, HTTP_NOTFOUND, fmt::format("{} ({})", filename, error->message).c_str());
+        tr_error_free(error);
+        return;
     }
+
+    auto const now = tr_time();
+    add_time_header(req->output_headers, "Date", now);
+    add_time_header(req->output_headers, "Expires", now + (24 * 60 * 60));
+    evhttp_add_header(req->output_headers, "Content-Type", mimetype_guess(filename));
+
+    auto* const response = make_response(req, server, std::string_view{ std::data(content), std::size(content) });
+    evhttp_send_reply(req, HTTP_OK, "OK", response);
+    evbuffer_free(response);
 }
 
 static void handle_web_client(struct evhttp_request* req, tr_rpc_server* server)
 {
-    char const* webClientDir = tr_getWebClientDir(server->session);
-
-    if (tr_str_is_empty(webClientDir))
+    if (std::empty(server->web_client_dir_))
     {
         send_simple_response(
             req,
@@ -274,24 +257,31 @@ static void handle_web_client(struct evhttp_request* req, tr_rpc_server* server)
     }
     else
     {
-        // TODO: string_view
-        char* const subpath = tr_strdup(req->uri + std::size(server->url()) + 4);
-        if (char* pch = strchr(subpath, '?'); pch != nullptr)
+        // convert `req->uri` (ex: "/transmission/web/images/favicon.png")
+        // into a filesystem path (ex: "/usr/share/transmission/web/images/favicon.png")
+
+        // remove the "/transmission/web/" prefix
+        static auto constexpr Web = "web/"sv;
+        auto subpath = std::string_view{ req->uri }.substr(std::size(server->url()) + std::size(Web));
+
+        // remove any trailing query / fragment
+        subpath = subpath.substr(0, subpath.find_first_of("?#"sv));
+
+        // if the query is empty, use the default
+        static auto constexpr DefaultPage = "index.html"sv;
+        if (std::empty(subpath))
         {
-            *pch = '\0';
+            subpath = DefaultPage;
         }
 
-        if (strstr(subpath, "..") != nullptr)
+        if (tr_strvContains(subpath, ".."sv))
         {
             send_simple_response(req, HTTP_NOTFOUND, "<p>Tsk, tsk.</p>");
         }
         else
         {
-            auto const filename = tr_pathbuf{ webClientDir, "/"sv, tr_str_is_empty(subpath) ? "index.html" : subpath };
-            serve_file(req, server, filename.sv());
+            serve_file(req, server, tr_pathbuf{ server->web_client_dir_, '/', subpath });
         }
-
-        tr_free(subpath);
     }
 }
 
@@ -301,19 +291,16 @@ struct rpc_response_data
     tr_rpc_server* server;
 };
 
-static void rpc_response_func(tr_session* /*session*/, tr_variant* response, void* user_data)
+static void rpc_response_func(tr_session* /*session*/, tr_variant* content, void* user_data)
 {
     auto* data = static_cast<struct rpc_response_data*>(user_data);
-    struct evbuffer* response_buf = tr_variantToBuf(response, TR_VARIANT_FMT_JSON_LEAN);
-    struct evbuffer* buf = evbuffer_new();
 
-    add_response(data->req, data->server, buf, response_buf);
+    auto* const response = make_response(data->req, data->server, tr_variantToStr(content, TR_VARIANT_FMT_JSON_LEAN));
     evhttp_add_header(data->req->output_headers, "Content-Type", "application/json; charset=UTF-8");
-    evhttp_send_reply(data->req, HTTP_OK, "OK", buf);
+    evhttp_send_reply(data->req, HTTP_OK, "OK", response);
+    evbuffer_free(response);
 
-    evbuffer_free(buf);
-    evbuffer_free(response_buf);
-    tr_free(data);
+    delete data;
 }
 
 static void handle_rpc_from_json(struct evhttp_request* req, tr_rpc_server* server, std::string_view json)
@@ -321,11 +308,11 @@ static void handle_rpc_from_json(struct evhttp_request* req, tr_rpc_server* serv
     auto top = tr_variant{};
     auto const have_content = tr_variantFromBuf(&top, TR_VARIANT_PARSE_JSON | TR_VARIANT_PARSE_INPLACE, json);
 
-    auto* const data = tr_new0(struct rpc_response_data, 1);
-    data->req = req;
-    data->server = server;
-
-    tr_rpc_request_exec_json(server->session, have_content ? &top : nullptr, rpc_response_func, data);
+    tr_rpc_request_exec_json(
+        server->session,
+        have_content ? &top : nullptr,
+        rpc_response_func,
+        new rpc_response_data{ req, server });
 
     if (have_content)
     {
@@ -341,20 +328,6 @@ static void handle_rpc(struct evhttp_request* req, tr_rpc_server* server)
                                       evbuffer_get_length(req->input_buffer) };
         handle_rpc_from_json(req, server, json);
         return;
-    }
-
-    if (req->type == EVHTTP_REQ_GET)
-    {
-        char const* q = strchr(req->uri, '?');
-
-        if (q != nullptr)
-        {
-            auto* const data = tr_new0(struct rpc_response_data, 1);
-            data->req = req;
-            data->server = server;
-            tr_rpc_request_exec_uri(server->session, q + 1, rpc_response_func, data);
-            return;
-        }
     }
 
     send_simple_response(req, 405, nullptr);
@@ -940,6 +913,7 @@ static void missing_settings_key(tr_quark const q)
 
 tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
     : compressor{ libdeflate_alloc_compressor(DeflateLevel), libdeflate_free_compressor }
+    , web_client_dir_{ tr_getWebClientDir(session_in) }
     , bindAddress(std::make_unique<struct tr_rpc_address>())
     , session{ session_in }
 {
@@ -1145,10 +1119,9 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
         }
     }
 
-    char const* webClientDir = tr_getWebClientDir(this->session);
-    if (!tr_str_is_empty(webClientDir))
+    if (!std::empty(web_client_dir_))
     {
-        tr_logAddInfo(fmt::format(_("Serving RPC and Web requests from '{path}'"), fmt::arg("path", webClientDir)));
+        tr_logAddInfo(fmt::format(_("Serving RPC and Web requests from '{path}'"), fmt::arg("path", web_client_dir_)));
     }
 }
 

@@ -31,7 +31,6 @@
 #include "rpcimpl.h"
 #include "session-id.h"
 #include "session.h"
-#include "stats.h"
 #include "torrent.h"
 #include "tr-assert.h"
 #include "tr-macros.h"
@@ -307,7 +306,7 @@ static char const* torrentRemove(
     auto delete_flag = bool{ false };
     (void)tr_variantDictFindBool(args_in, TR_KEY_delete_local_data, &delete_flag);
 
-    tr_rpc_callback_type type = delete_flag ? TR_RPC_TORRENT_TRASHING : TR_RPC_TORRENT_REMOVING;
+    tr_rpc_callback_type const type = delete_flag ? TR_RPC_TORRENT_TRASHING : TR_RPC_TORRENT_REMOVING;
 
     for (auto* tor : getTorrents(session, args_in))
     {
@@ -479,8 +478,6 @@ static void addPeers(tr_torrent const* tor, tr_variant* list)
 
 static void initField(tr_torrent const* const tor, tr_stat const* const st, tr_variant* const initme, tr_quark key)
 {
-    char* str = nullptr;
-
     switch (key)
     {
     case TR_KEY_activityDate:
@@ -626,9 +623,7 @@ static void initField(tr_torrent const* const tor, tr_stat const* const st, tr_v
         break;
 
     case TR_KEY_magnetLink:
-        str = tr_torrentGetMagnetLink(tor);
-        tr_variantInitStr(initme, str);
-        tr_free(str);
+        tr_variantInitStr(initme, tor->metainfo_.magnet());
         break;
 
     case TR_KEY_metadataPercentComplete:
@@ -1444,7 +1439,7 @@ static void onBlocklistFetched(tr_web::FetchResponse const& web_response)
 
     // tr_blocklistSetContent needs a source file,
     // so save content into a tmpfile
-    auto const filename = tr_pathbuf{ session->config_dir, "/blocklist.tmp"sv };
+    auto const filename = tr_pathbuf{ session->configDir(), "/blocklist.tmp"sv };
     if (tr_error* error = nullptr; !tr_saveFile(filename, content, &error))
     {
         tr_idle_function_done(
@@ -2071,9 +2066,6 @@ static char const* sessionStats(
     tr_variant* args_out,
     tr_rpc_idle_data* /*idle_data*/)
 {
-    auto currentStats = tr_session_stats{};
-    auto cumulativeStats = tr_session_stats{};
-
     auto const& torrents = session->torrents();
     auto const total = std::size(torrents);
     auto const running = std::count_if(
@@ -2081,28 +2073,27 @@ static char const* sessionStats(
         std::end(torrents),
         [](auto const* tor) { return tor->isRunning; });
 
-    tr_sessionGetStats(session, &currentStats);
-    tr_sessionGetCumulativeStats(session, &cumulativeStats);
-
     tr_variantDictAddInt(args_out, TR_KEY_activeTorrentCount, running);
     tr_variantDictAddReal(args_out, TR_KEY_downloadSpeed, tr_sessionGetPieceSpeed_Bps(session, TR_DOWN));
     tr_variantDictAddInt(args_out, TR_KEY_pausedTorrentCount, total - running);
     tr_variantDictAddInt(args_out, TR_KEY_torrentCount, total);
     tr_variantDictAddReal(args_out, TR_KEY_uploadSpeed, tr_sessionGetPieceSpeed_Bps(session, TR_UP));
 
+    auto stats = session->stats().cumulative();
     tr_variant* d = tr_variantDictAddDict(args_out, TR_KEY_cumulative_stats, 5);
-    tr_variantDictAddInt(d, TR_KEY_downloadedBytes, cumulativeStats.downloadedBytes);
-    tr_variantDictAddInt(d, TR_KEY_filesAdded, cumulativeStats.filesAdded);
-    tr_variantDictAddInt(d, TR_KEY_secondsActive, cumulativeStats.secondsActive);
-    tr_variantDictAddInt(d, TR_KEY_sessionCount, cumulativeStats.sessionCount);
-    tr_variantDictAddInt(d, TR_KEY_uploadedBytes, cumulativeStats.uploadedBytes);
+    tr_variantDictAddInt(d, TR_KEY_downloadedBytes, stats.downloadedBytes);
+    tr_variantDictAddInt(d, TR_KEY_filesAdded, stats.filesAdded);
+    tr_variantDictAddInt(d, TR_KEY_secondsActive, stats.secondsActive);
+    tr_variantDictAddInt(d, TR_KEY_sessionCount, stats.sessionCount);
+    tr_variantDictAddInt(d, TR_KEY_uploadedBytes, stats.uploadedBytes);
 
+    stats = session->stats().current();
     d = tr_variantDictAddDict(args_out, TR_KEY_current_stats, 5);
-    tr_variantDictAddInt(d, TR_KEY_downloadedBytes, currentStats.downloadedBytes);
-    tr_variantDictAddInt(d, TR_KEY_filesAdded, currentStats.filesAdded);
-    tr_variantDictAddInt(d, TR_KEY_secondsActive, currentStats.secondsActive);
-    tr_variantDictAddInt(d, TR_KEY_sessionCount, currentStats.sessionCount);
-    tr_variantDictAddInt(d, TR_KEY_uploadedBytes, currentStats.uploadedBytes);
+    tr_variantDictAddInt(d, TR_KEY_downloadedBytes, stats.downloadedBytes);
+    tr_variantDictAddInt(d, TR_KEY_filesAdded, stats.filesAdded);
+    tr_variantDictAddInt(d, TR_KEY_secondsActive, stats.secondsActive);
+    tr_variantDictAddInt(d, TR_KEY_sessionCount, stats.sessionCount);
+    tr_variantDictAddInt(d, TR_KEY_uploadedBytes, stats.uploadedBytes);
 
     return nullptr;
 }
@@ -2171,7 +2162,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_config_dir:
-        tr_variantDictAddStr(d, key, tr_sessionGetConfigDir(s));
+        tr_variantDictAddStr(d, key, s->configDir());
         break;
 
     case TR_KEY_default_trackers:
@@ -2613,30 +2604,4 @@ void tr_rpc_parse_list_str(tr_variant* setme, std::string_view str)
             tr_variantListAddInt(setme, value);
         }
     }
-}
-
-void tr_rpc_request_exec_uri(
-    tr_session* session,
-    std::string_view request_uri,
-    tr_rpc_response_func callback,
-    void* callback_user_data)
-{
-    auto top = tr_variant{};
-    tr_variantInitDict(&top, 3);
-    tr_variant* const args = tr_variantDictAddDict(&top, TR_KEY_arguments, 0);
-
-    if (auto const parsed = tr_urlParse(request_uri); parsed)
-    {
-        for (auto const& [key, val] : tr_url_query_view(parsed->query))
-        {
-            auto is_arg = key != "method"sv && key != "tag"sv;
-            auto* const parent = is_arg ? args : &top;
-            tr_rpc_parse_list_str(tr_variantDictAdd(parent, tr_quark_new(key)), val);
-        }
-    }
-
-    tr_rpc_request_exec_json(session, &top, callback, callback_user_data);
-
-    // cleanup
-    tr_variantFree(&top);
 }

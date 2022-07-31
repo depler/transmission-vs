@@ -3,9 +3,8 @@
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
-#include <climits> /* USHRT_MAX */
+#include <algorithm> // std::copy_n()
 #include <cstdio> /* fprintf() */
-#include <cstring> /* strchr(), memcmp(), memcpy() */
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -142,7 +141,7 @@ static void verboseLog(std::string_view description, tr_direction direction, std
 
     auto const direction_sv = direction == TR_DOWN ? "<< "sv : ">> "sv;
     out << description << std::endl << "[raw]"sv << direction_sv;
-    for (unsigned char ch : message)
+    for (unsigned char const ch : message)
     {
         if (isprint(ch) != 0)
         {
@@ -258,7 +257,10 @@ void tr_announcerParseHttpAnnounceResponse(tr_announce_response& response, std::
             }
             else if (key == "ip")
             {
-                tr_address_from_string(&pex_.addr, value);
+                if (auto const addr = tr_address::fromString(value); addr)
+                {
+                    pex_.addr = *addr;
+                }
             }
             else if (key == "peer id")
             {
