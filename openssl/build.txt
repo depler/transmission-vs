@@ -1,4 +1,0 @@
-=====x64 Native Tools Command Prompt for VS=====
-perl Configure VC-WIN64A-ONECORE no-shared
-nmake
-nmake test
