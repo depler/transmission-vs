@@ -45,12 +45,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;./utfcpp;./libdeflate;./libpsl;$(IncludePath)</IncludePath>
+    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;./utfcpp;./libdeflate;./libpsl;./wolfssl_src;$(IncludePath)</IncludePath>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LibraryPath>./libs;$(LibraryPath)</LibraryPath>
-    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;./utfcpp;./libdeflate;./libpsl;$(IncludePath)</IncludePath>
+    <IncludePath>./;./natpmp;./zlib;./curl;./arc4;./utfcpp;./libdeflate;./libpsl;./wolfssl_src;$(IncludePath)</IncludePath>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -58,7 +58,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_WOLFSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H -DUSE_LIBPSL -DPSL_STATIC -DCYASSL_IS_WOLFSSL -DWOLFSSL_LIB -DWOLFSSL_USER_SETTINGS</AdditionalOptions>
+      <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_WOLFSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H -DUSE_LIBPSL -DPSL_STATIC -DCYASSL_IS_WOLFSSL -DWOLFSSL_USER_SETTINGS</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -67,7 +67,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>c:\Data\XSoft\Transmission\daemon_debug\transmission.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
@@ -76,7 +76,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_WOLFSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H -DUSE_LIBPSL -DPSL_STATIC -DCYASSL_IS_WOLFSSL -DWOLFSSL_LIB -DWOLFSSL_USER_SETTINGS</AdditionalOptions>
+      <AdditionalOptions>/wd4996 -DWINVER=0x0600 -D_WIN32_WINNT=0x0600 -DUNICODE -D_UNICODE -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS -DFD_SETSIZE=1024 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D__TRANSMISSION__ -DNATPMP_STATICLIB -DMINIUPNP_STATICLIB -DENABLE_STRNATPMPERR -DWITH_UTP -DBUILDING_LIBCURL -DCURL_STATICLIB -DUSE_WOLFSSL -DUSE_IPV6 -DHAVE_LIBZ -DHAVE_ZLIB_H -DUSE_LIBPSL -DPSL_STATIC -DCYASSL_IS_WOLFSSL -DWOLFSSL_USER_SETTINGS</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -86,7 +86,7 @@
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -394,6 +394,37 @@
     <ClCompile Include="natpmp\natpmp.c" />
     <ClCompile Include="natpmp\wingettimeofday.c" />
     <ClCompile Include="dht\dht.c" />
+    <ClCompile Include="wolfssl_src\src\internal.c" />
+    <ClCompile Include="wolfssl_src\src\keys.c" />
+    <ClCompile Include="wolfssl_src\src\ssl.c" />
+    <ClCompile Include="wolfssl_src\src\tls.c" />
+    <ClCompile Include="wolfssl_src\src\wolfio.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\aes.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\asn.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\coding.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\des3.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\dh.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\dsa.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\ecc.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\error.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\hash.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\hmac.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\kdf.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\logging.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\md4.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\md5.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\memory.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\pkcs12.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\pwdbased.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\random.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\rsa.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\sha.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\sha256.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\sha512.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\sp_int.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\wc_encrypt.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\wc_port.c" />
+    <ClCompile Include="wolfssl_src\wolfcrypt\src\wolfmath.c" />
     <ClCompile Include="zlib\adler32.c" />
     <ClCompile Include="zlib\compress.c" />
     <ClCompile Include="zlib\crc32.c" />
@@ -772,6 +803,7 @@
     <ClInclude Include="utfcpp\utf8\cpp11.h" />
     <ClInclude Include="utfcpp\utf8\cpp17.h" />
     <ClInclude Include="utfcpp\utf8\unchecked.h" />
+    <ClInclude Include="wolfssl\wolfcrypt\user_settings.h" />
     <ClInclude Include="zlib\crc32.h" />
     <ClInclude Include="zlib\deflate.h" />
     <ClInclude Include="zlib\gzguts.h" />
