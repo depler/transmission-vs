@@ -244,6 +244,9 @@ void tr_bindinfo::bindAndListenForIncomingPeers(tr_session* session)
 
     if (socket_ != TR_BAD_SOCKET)
     {
+        tr_logAddInfo(fmt::format(
+            _("Listening to incoming peer connections on {hostport}"),
+            fmt::arg("hostport", addr_.readable(session->private_peer_port))));
         ev_ = event_new(session->event_base, socket_, EV_READ | EV_PERSIST, accept_incoming_peer, session);
         event_add(ev_, nullptr);
     }
@@ -1293,9 +1296,8 @@ uint16_t tr_sessionGetPeerPort(tr_session const* session)
 
 uint16_t tr_sessionSetPeerPortRandom(tr_session* session)
 {
-    tr_port p = getRandomPort(session);
+    tr_port const p = getRandomPort(session);
     tr_sessionSetPeerPort(session, p.host());
-
     return p.host();
 }
 
