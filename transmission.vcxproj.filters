@@ -1089,6 +1089,9 @@
     <ClCompile Include="wolfssl_src\wolfcrypt\src\sha512.c">
       <Filter>wolfssl</Filter>
     </ClCompile>
+    <ClCompile Include="libtransmission\timer-ev.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="b64\cdecode.h">
@@ -2209,6 +2212,12 @@
     </ClInclude>
     <ClInclude Include="wolfssl\wolfcrypt\user_settings.h">
       <Filter>wolfssl</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\timer.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\timer-ev.h">
+      <Filter>libtransmission</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

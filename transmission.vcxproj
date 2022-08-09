@@ -343,6 +343,7 @@
     <ClCompile Include="libtransmission\session.cc" />
     <ClCompile Include="libtransmission\stats.cc" />
     <ClCompile Include="libtransmission\subprocess-win32.cc" />
+    <ClCompile Include="libtransmission\timer-ev.cc" />
     <ClCompile Include="libtransmission\torrent-ctor.cc" />
     <ClCompile Include="libtransmission\torrent-files.cc" />
     <ClCompile Include="libtransmission\torrent-magnet.cc" />
@@ -733,6 +734,8 @@
     <ClInclude Include="libtransmission\session.h" />
     <ClInclude Include="libtransmission\stats.h" />
     <ClInclude Include="libtransmission\subprocess.h" />
+    <ClInclude Include="libtransmission\timer-ev.h" />
+    <ClInclude Include="libtransmission\timer.h" />
     <ClInclude Include="libtransmission\torrent-files.h" />
     <ClInclude Include="libtransmission\torrent-magnet.h" />
     <ClInclude Include="libtransmission\torrent-metainfo.h" />
