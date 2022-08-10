@@ -758,7 +758,7 @@
     <ClInclude Include="libtransmission\variant.h" />
     <ClInclude Include="libtransmission\verify.h" />
     <ClInclude Include="libtransmission\version.h" />
-    <ClInclude Include="libtransmission\watchdir-common.h" />
+    <ClInclude Include="libtransmission\watchdir-base.h" />
     <ClInclude Include="libtransmission\watchdir.h" />
     <ClInclude Include="libtransmission\web-utils.h" />
     <ClInclude Include="libtransmission\web.h" />

@@ -1544,9 +1544,6 @@
     <ClInclude Include="libtransmission\watchdir.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\watchdir-common.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
     <ClInclude Include="libtransmission\web.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
@@ -2217,6 +2214,9 @@
       <Filter>libtransmission</Filter>
     </ClInclude>
     <ClInclude Include="libtransmission\timer-ev.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\watchdir-base.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
   </ItemGroup>
