@@ -985,11 +985,11 @@ tr_torrent_activity tr_torrentGetActivity(tr_torrent const* tor)
     }
     else if (tor->isQueued())
     {
-        if (is_seed && tr_sessionGetQueueEnabled(tor->session, TR_UP))
+        if (is_seed && tor->session->queueEnabled(TR_UP))
         {
             ret = TR_STATUS_SEED_WAIT;
         }
-        else if (!is_seed && tr_sessionGetQueueEnabled(tor->session, TR_DOWN))
+        else if (!is_seed && tor->session->queueEnabled(TR_DOWN))
         {
             ret = TR_STATUS_DOWNLOAD_WAIT;
         }
@@ -1007,7 +1007,7 @@ static int torrentGetIdleSecs(tr_torrent const* tor, tr_torrent_activity activit
 
 static inline bool tr_torrentIsStalled(tr_torrent const* tor, int idle_secs)
 {
-    return tr_sessionGetQueueStalledEnabled(tor->session) && idle_secs > tr_sessionGetQueueStalledMinutes(tor->session) * 60;
+    return tor->session->queueStalledEnabled() && idle_secs > tor->session->queueStalledMinutes() * 60;
 }
 
 tr_stat const* tr_torrentStat(tr_torrent* tor)
@@ -1264,7 +1264,7 @@ tr_peer_stat* tr_torrentPeers(tr_torrent const* tor, int* peerCount)
 
 void tr_torrentPeersFree(tr_peer_stat* peers, int /*peerCount*/)
 {
-    tr_free(peers);
+    delete[] peers;
 }
 
 void tr_torrentAvailability(tr_torrent const* tor, int8_t* tab, int size)

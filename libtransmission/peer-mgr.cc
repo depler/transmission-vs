@@ -84,7 +84,7 @@ private:
     }
 
 public:
-    tr_handshake_mediator_impl(tr_session& session)
+    explicit tr_handshake_mediator_impl(tr_session& session)
         : session_{ session }
     {
     }
@@ -1258,7 +1258,7 @@ void tr_peerMgrAddIncoming(tr_peerMgr* manager, tr_address const* addr, tr_port 
     {
         auto mediator = std::make_shared<tr_handshake_mediator_impl>(*session);
         tr_peerIo* const io = tr_peerIoNewIncoming(session, &session->top_bandwidth_, addr, port, tr_time(), socket);
-        tr_handshake* const handshake = tr_handshakeNew(mediator, io, session->encryptionMode, on_handshake_done, manager);
+        tr_handshake* const handshake = tr_handshakeNew(mediator, io, session->encryptionMode(), on_handshake_done, manager);
 
         tr_peerIoUnref(io); /* balanced by the implicit ref in tr_peerIoNewIncoming() */
 
@@ -1795,7 +1795,7 @@ tr_peer_stat* tr_peerMgrPeerStats(tr_torrent const* tor, int* setme_count)
     TR_ASSERT(tor->swarm->manager != nullptr);
 
     auto const n = tor->swarm->peerCount();
-    auto* const ret = tr_new0(tr_peer_stat, n);
+    auto* const ret = new tr_peer_stat[n];
 
     auto const now = tr_time();
     auto const now_msec = tr_time_msec();
@@ -1826,7 +1826,7 @@ namespace
 /* does this peer have any pieces that we want? */
 [[nodiscard]] bool isPeerInteresting(
     tr_torrent* const tor,
-    bool const* const piece_is_interesting,
+    std::vector<bool> const& piece_is_interesting,
     tr_peerMsgs const* const peer)
 {
     /* these cases should have already been handled by the calling code... */
@@ -1990,7 +1990,8 @@ void rechokeDownloads(tr_swarm* s)
         int const n = tor->pieceCount();
 
         /* build a bitfield of interesting pieces... */
-        auto* const piece_is_interesting = tr_new(bool, n);
+        auto piece_is_interesting = std::vector<bool>{};
+        piece_is_interesting.resize(n);
 
         for (int i = 0; i < n; ++i)
         {
@@ -2034,8 +2035,6 @@ void rechokeDownloads(tr_swarm* s)
                 rechoke.emplace_back(peer, rechoke_state, salter());
             }
         }
-
-        tr_free(piece_is_interesting);
     }
 
     std::sort(std::begin(rechoke), std::end(rechoke));
@@ -2075,12 +2074,22 @@ namespace
 
 struct ChokeData
 {
-    bool isInterested;
-    bool wasChoked;
-    bool isChoked;
+    ChokeData(tr_peerMsgs* msgs_in, int rate_in, uint8_t salt_in, bool is_interested_in, bool was_choked_in, bool is_choked_in)
+        : msgs{ msgs_in }
+        , rate{ rate_in }
+        , salt{ salt_in }
+        , is_interested{ is_interested_in }
+        , was_choked{ was_choked_in }
+        , is_choked{ is_choked_in }
+    {
+    }
+
+    tr_peerMsgs* msgs;
     int rate;
     uint8_t salt;
-    tr_peerMsgs* msgs;
+    bool is_interested;
+    bool was_choked;
+    bool is_choked;
 
     [[nodiscard]] constexpr auto compare(ChokeData const& that) const noexcept // <=>
     {
@@ -2089,9 +2098,9 @@ struct ChokeData
             return this->rate > that.rate ? -1 : 1;
         }
 
-        if (this->wasChoked != that.wasChoked) // prefer unchoked
+        if (this->was_choked != that.was_choked) // prefer unchoked
         {
-            return this->wasChoked ? 1 : -1;
+            return this->was_choked ? 1 : -1;
         }
 
         if (this->salt != that.salt) // random order
@@ -2146,7 +2155,8 @@ void rechokeUploads(tr_swarm* s, uint64_t const now)
 
     auto const peerCount = s->peerCount();
     auto& peers = s->peers;
-    auto* const choke = tr_new0(struct ChokeData, peerCount);
+    auto choked = std::vector<ChokeData>{};
+    choked.reserve(peerCount);
     auto const* const session = s->manager->session;
     bool const chokeAll = !s->tor->clientCanUpload();
     bool const isMaxedOut = isBandwidthMaxedOut(s->tor->bandwidth_, now, TR_UP);
@@ -2161,8 +2171,6 @@ void rechokeUploads(tr_swarm* s, uint64_t const now)
     {
         s->optimistic = nullptr;
     }
-
-    int size = 0;
 
     /* sort the peers by preference and rate */
     auto salter = tr_salt_shaker{};
@@ -2180,17 +2188,17 @@ void rechokeUploads(tr_swarm* s, uint64_t const now)
         }
         else if (peer != s->optimistic)
         {
-            struct ChokeData* n = &choke[size++];
-            n->msgs = peer;
-            n->isInterested = peer->is_peer_interested();
-            n->wasChoked = peer->is_peer_choked();
-            n->rate = getRateBps(s->tor, peer, now);
-            n->salt = salter();
-            n->isChoked = true;
+            choked.emplace_back(
+                peer,
+                getRateBps(s->tor, peer, now),
+                salter(),
+                peer->is_peer_interested(),
+                peer->is_peer_choked(),
+                true);
         }
     }
 
-    std::sort(choke, choke + size);
+    std::sort(std::begin(choked), std::end(choked));
 
     /**
      * Reciprocation and number of uploads capping is managed by unchoking
@@ -2207,57 +2215,57 @@ void rechokeUploads(tr_swarm* s, uint64_t const now)
      *
      * If our bandwidth is maxed out, don't unchoke any more peers.
      */
-    int checkedChokeCount = 0;
-    int unchokedInterested = 0;
+    auto checked_choke_count = size_t{ 0U };
+    auto unchoked_interested = size_t{ 0U };
 
-    for (int i = 0; i < size && unchokedInterested < session->uploadSlotsPerTorrent; ++i)
+    for (auto& item : choked)
     {
-        choke[i].isChoked = isMaxedOut ? choke[i].wasChoked : false;
-
-        ++checkedChokeCount;
-
-        if (choke[i].isInterested)
+        if (unchoked_interested >= session->upload_slots_per_torrent)
         {
-            ++unchokedInterested;
+            break;
+        }
+
+        item.is_choked = isMaxedOut ? item.was_choked : false;
+
+        ++checked_choke_count;
+
+        if (item.is_interested)
+        {
+            ++unchoked_interested;
         }
     }
 
     /* optimistic unchoke */
-    if (s->optimistic == nullptr && !isMaxedOut && checkedChokeCount < size)
+    if (s->optimistic == nullptr && !isMaxedOut && checked_choke_count < std::size(choked))
     {
-        auto randPool = std::vector<ChokeData*>{};
+        auto rand_pool = std::vector<ChokeData*>{};
 
-        for (int i = checkedChokeCount; i < size; ++i)
+        for (auto i = checked_choke_count, n = std::size(choked); i < n; ++i)
         {
-            if (choke[i].isInterested)
+            if (choked[i].is_interested)
             {
-                tr_peerMsgs const* msgs = choke[i].msgs;
-                int const x = isNew(msgs) ? 3 : 1;
+                int const x = isNew(choked[i].msgs) ? 3 : 1;
 
                 for (int y = 0; y < x; ++y)
                 {
-                    randPool.push_back(&choke[i]);
+                    rand_pool.push_back(&choked[i]);
                 }
             }
         }
 
-        auto const n = std::size(randPool);
-        if (n != 0)
+        if (auto const n = std::size(rand_pool); n != 0)
         {
-            auto* c = randPool[tr_rand_int_weak(n)];
-            c->isChoked = false;
+            auto* c = rand_pool[tr_rand_int_weak(n)];
+            c->is_choked = false;
             s->optimistic = c->msgs;
             s->optimistic_unchoke_time_scaler = OptimisticUnchokeMultiplier;
         }
     }
 
-    for (int i = 0; i < size; ++i)
+    for (auto& item : choked)
     {
-        choke[i].msgs->set_choke(choke[i].isChoked);
+        item.msgs->set_choke(item.is_choked);
     }
-
-    /* cleanup */
-    tr_free(choke);
 }
 
 } // namespace rechoke_uploads_helpers
@@ -2450,7 +2458,7 @@ void enforceSessionPeerLimit(tr_session* session)
         std::end(torrents),
         size_t{},
         [](size_t sum, tr_torrent const* tor) { return sum + tor->swarm->peerCount(); });
-    size_t const max = tr_sessionGetPeerLimit(session);
+    size_t const max = session->peerLimit();
     if (n_peers <= max)
     {
         return;
@@ -2532,7 +2540,7 @@ void queuePulse(tr_session* session, tr_direction dir)
     TR_ASSERT(tr_isSession(session));
     TR_ASSERT(tr_isDirection(dir));
 
-    if (tr_sessionGetQueueEnabled(session, dir))
+    if (session->queueEnabled(dir))
     {
         auto const n = tr_sessionCountQueueFreeSlots(session, dir);
 
@@ -2730,7 +2738,7 @@ struct peer_candidate
     auto const now_msec = tr_time_msec();
 
     // leave 5% of connection slots for incoming connections -- ticket #2609
-    auto const max_candidates = static_cast<size_t>(tr_sessionGetPeerLimit(session) * 0.95);
+    auto const max_candidates = static_cast<size_t>(session->peerLimit() * 0.95);
 
     /* count how many peers and atoms we've got */
     auto atom_count = size_t{};
@@ -2836,7 +2844,7 @@ void initiateConnection(tr_peerMgr* mgr, tr_swarm* s, peer_atom& atom)
     else
     {
         auto mediator = std::make_shared<tr_handshake_mediator_impl>(*mgr->session);
-        tr_handshake* handshake = tr_handshakeNew(mediator, io, mgr->session->encryptionMode, on_handshake_done, mgr);
+        tr_handshake* handshake = tr_handshakeNew(mediator, io, mgr->session->encryptionMode(), on_handshake_done, mgr);
 
         TR_ASSERT(io->torrentHash());
 
