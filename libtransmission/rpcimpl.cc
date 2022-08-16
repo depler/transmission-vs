@@ -58,22 +58,6 @@ enum class TrFormat
 ****
 ***/
 
-static tr_rpc_callback_status notify(tr_session* session, tr_rpc_callback_type type, tr_torrent* tor)
-{
-    tr_rpc_callback_status status = TR_RPC_OK;
-
-    if (session->rpc_func != nullptr)
-    {
-        status = (*session->rpc_func)(session, type, tor, session->rpc_func_user_data);
-    }
-
-    return status;
-}
-
-/***
-****
-***/
-
 /* For functions that can't be immediately executed, like torrentAdd,
  * this is the callback data used to pass a response to the caller
  * when the task is complete */
@@ -177,10 +161,10 @@ static void notifyBatchQueueChange(tr_session* session, std::vector<tr_torrent*>
 {
     for (auto* tor : torrents)
     {
-        notify(session, TR_RPC_TORRENT_CHANGED, tor);
+        session->rpcNotify(TR_RPC_TORRENT_CHANGED, tor);
     }
 
-    notify(session, TR_RPC_SESSION_QUEUE_POSITIONS_CHANGED, nullptr);
+    session->rpcNotify(TR_RPC_SESSION_QUEUE_POSITIONS_CHANGED);
 }
 
 static char const* queueMoveTop(
@@ -252,7 +236,7 @@ static char const* torrentStart(
         if (!tor->isRunning)
         {
             tr_torrentStart(tor);
-            notify(session, TR_RPC_TORRENT_STARTED, tor);
+            session->rpcNotify(TR_RPC_TORRENT_STARTED, tor);
         }
     }
 
@@ -272,7 +256,7 @@ static char const* torrentStartNow(
         if (!tor->isRunning)
         {
             tr_torrentStartNow(tor);
-            notify(session, TR_RPC_TORRENT_STARTED, tor);
+            session->rpcNotify(TR_RPC_TORRENT_STARTED, tor);
         }
     }
 
@@ -290,7 +274,7 @@ static char const* torrentStop(
         if (tor->isRunning || tor->isQueued() || tor->verifyState() != TR_VERIFY_NONE)
         {
             tor->isStopping = true;
-            notify(session, TR_RPC_TORRENT_STOPPED, tor);
+            session->rpcNotify(TR_RPC_TORRENT_STOPPED, tor);
         }
     }
 
@@ -310,9 +294,7 @@ static char const* torrentRemove(
 
     for (auto* tor : getTorrents(session, args_in))
     {
-        tr_rpc_callback_status const status = notify(session, type, tor);
-
-        if ((status & TR_RPC_NOREMOVE) == 0)
+        if (auto const status = session->rpcNotify(type, tor); (status & TR_RPC_NOREMOVE) == 0)
         {
             tr_torrentRemove(tor, delete_flag, nullptr);
         }
@@ -332,7 +314,7 @@ static char const* torrentReannounce(
         if (tr_torrentCanManualUpdate(tor))
         {
             tr_torrentManualUpdate(tor);
-            notify(session, TR_RPC_TORRENT_CHANGED, tor);
+            session->rpcNotify(TR_RPC_TORRENT_CHANGED, tor);
         }
     }
 
@@ -348,7 +330,7 @@ static char const* torrentVerify(
     for (auto* tor : getTorrents(session, args_in))
     {
         tr_torrentVerify(tor);
-        notify(session, TR_RPC_TORRENT_CHANGED, tor);
+        session->rpcNotify(TR_RPC_TORRENT_CHANGED, tor);
     }
 
     return nullptr;
@@ -1271,7 +1253,7 @@ static char const* torrentSet(
             }
         }
 
-        notify(session, TR_RPC_TORRENT_CHANGED, tor);
+        session->rpcNotify(TR_RPC_TORRENT_CHANGED, tor);
     }
 
     return errmsg;
@@ -1301,7 +1283,7 @@ static char const* torrentSetLocation(
     for (auto* tor : getTorrents(session, args_in))
     {
         tor->setLocation(location, move, nullptr, nullptr);
-        notify(session, TR_RPC_TORRENT_MOVED, tor);
+        session->rpcNotify(TR_RPC_TORRENT_MOVED, tor);
     }
 
     return nullptr;
@@ -1499,7 +1481,7 @@ static void addTorrentImpl(struct tr_rpc_idle_data* data, tr_ctor* ctor)
         return;
     }
 
-    notify(data->session, TR_RPC_TORRENT_ADDED, tor);
+    data->session->rpcNotify(TR_RPC_TORRENT_ADDED, tor);
     addTorrentInfo(
         tor,
         TrFormat::Object,
@@ -2055,7 +2037,7 @@ static char const* sessionSet(
         tr_sessionSetAntiBruteForceEnabled(session, boolVal);
     }
 
-    notify(session, TR_RPC_SESSION_CHANGED, nullptr);
+    session->rpcNotify(TR_RPC_SESSION_CHANGED, nullptr);
 
     return nullptr;
 }
@@ -2074,10 +2056,10 @@ static char const* sessionStats(
         [](auto const* tor) { return tor->isRunning; });
 
     tr_variantDictAddInt(args_out, TR_KEY_activeTorrentCount, running);
-    tr_variantDictAddReal(args_out, TR_KEY_downloadSpeed, tr_sessionGetPieceSpeed_Bps(session, TR_DOWN));
+    tr_variantDictAddReal(args_out, TR_KEY_downloadSpeed, session->pieceSpeedBps(TR_DOWN));
     tr_variantDictAddInt(args_out, TR_KEY_pausedTorrentCount, total - running);
     tr_variantDictAddInt(args_out, TR_KEY_torrentCount, total);
-    tr_variantDictAddReal(args_out, TR_KEY_uploadSpeed, tr_sessionGetPieceSpeed_Bps(session, TR_UP));
+    tr_variantDictAddReal(args_out, TR_KEY_uploadSpeed, session->pieceSpeedBps(TR_UP));
 
     auto stats = session->stats().cumulative();
     tr_variant* d = tr_variantDictAddDict(args_out, TR_KEY_cumulative_stats, 5);
@@ -2202,19 +2184,19 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_pex_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsPexEnabled(s));
+        tr_variantDictAddBool(d, key, s->allowsPEX());
         break;
 
     case TR_KEY_utp_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsUTPEnabled(s));
+        tr_variantDictAddBool(d, key, s->allowsUTP());
         break;
 
     case TR_KEY_dht_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsDHTEnabled(s));
+        tr_variantDictAddBool(d, key, s->allowsDHT());
         break;
 
     case TR_KEY_lpd_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsLPDEnabled(s));
+        tr_variantDictAddBool(d, key, s->allowsLPD());
         break;
 
     case TR_KEY_peer_port:
@@ -2222,7 +2204,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_peer_port_random_on_start:
-        tr_variantDictAddBool(d, key, tr_sessionGetPeerPortRandomOnStart(s));
+        tr_variantDictAddBool(d, key, s->isPortRandom());
         break;
 
     case TR_KEY_port_forwarding_enabled:
@@ -2230,7 +2212,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_rename_partial_files:
-        tr_variantDictAddBool(d, key, tr_sessionIsIncompleteFileNamingEnabled(s));
+        tr_variantDictAddBool(d, key, s->isIncompleteFileNamingEnabled());
         break;
 
     case TR_KEY_rpc_version:
@@ -2246,19 +2228,19 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_seedRatioLimit:
-        tr_variantDictAddReal(d, key, tr_sessionGetRatioLimit(s));
+        tr_variantDictAddReal(d, key, s->desiredRatio());
         break;
 
     case TR_KEY_seedRatioLimited:
-        tr_variantDictAddBool(d, key, tr_sessionIsRatioLimited(s));
+        tr_variantDictAddBool(d, key, s->isRatioLimited());
         break;
 
     case TR_KEY_idle_seeding_limit:
-        tr_variantDictAddInt(d, key, tr_sessionGetIdleLimit(s));
+        tr_variantDictAddInt(d, key, s->idleLimitMinutes());
         break;
 
     case TR_KEY_idle_seeding_limit_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsIdleLimited(s));
+        tr_variantDictAddBool(d, key, s->isIdleLimited());
         break;
 
     case TR_KEY_seed_queue_enabled:
@@ -2282,7 +2264,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_speed_limit_up_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsSpeedLimited(s, TR_UP));
+        tr_variantDictAddBool(d, key, s->isSpeedLimited(TR_UP));
         break;
 
     case TR_KEY_speed_limit_down:
@@ -2290,7 +2272,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_speed_limit_down_enabled:
-        tr_variantDictAddBool(d, key, tr_sessionIsSpeedLimited(s, TR_DOWN));
+        tr_variantDictAddBool(d, key, s->isSpeedLimited(TR_DOWN));
         break;
 
     case TR_KEY_script_torrent_added_filename:
@@ -2346,7 +2328,7 @@ static void addSessionField(tr_session const* s, tr_variant* d, tr_quark key)
         break;
 
     case TR_KEY_session_id:
-        tr_variantDictAddStr(d, key, s->session_id.sv());
+        tr_variantDictAddStr(d, key, s->sessionId());
         break;
     }
 }
@@ -2425,7 +2407,7 @@ static char const* sessionClose(
     tr_variant* /*args_out*/,
     tr_rpc_idle_data* /*idle_data*/)
 {
-    notify(session, TR_RPC_SESSION_CLOSE, nullptr);
+    session->rpcNotify(TR_RPC_SESSION_CLOSE, nullptr);
     return nullptr;
 }
 

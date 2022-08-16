@@ -138,23 +138,20 @@ bool tr_torrent::isPieceTransferAllowed(tr_direction direction) const
 {
     TR_ASSERT(tr_isDirection(direction));
 
-    bool allowed = true;
-
     if (tr_torrentUsesSpeedLimit(this, direction) && this->speedLimitBps(direction) <= 0)
     {
-        allowed = false;
+        return false;
     }
 
     if (tr_torrentUsesSessionLimits(this))
     {
-        unsigned int limit = 0;
-        if (tr_sessionGetActiveSpeedLimit_Bps(this->session, direction, &limit) && (limit <= 0))
+        if (auto const limit = session->activeSpeedLimitBps(direction); limit && *limit == 0U)
         {
-            allowed = false;
+            return false;
         }
     }
 
-    return allowed;
+    return true;
 }
 
 /***
@@ -170,7 +167,7 @@ static void tr_torrentUnsetPeerId(tr_torrent* tor)
 static int peerIdTTL(tr_torrent const* tor)
 {
     auto const ctime = tor->peer_id_creation_time_;
-    return ctime == 0 ? 0 : (int)difftime(ctime + tor->session->peer_id_ttl_hours * 3600, tr_time());
+    return ctime == 0 ? 0 : (int)difftime(ctime + tor->session->peerIdTTLHours() * 3600, tr_time());
 }
 
 tr_peer_id_t const& tr_torrentGetPeerId(tr_torrent* tor)
@@ -301,14 +298,14 @@ double tr_torrentGetRatioLimit(tr_torrent const* tor)
 
 bool tr_torrentGetSeedRatio(tr_torrent const* tor, double* ratio)
 {
-    auto isLimited = bool{};
+    auto is_limited = bool{};
 
     TR_ASSERT(tr_isTorrent(tor));
 
     switch (tr_torrentGetRatioMode(tor))
     {
     case TR_RATIOLIMIT_SINGLE:
-        isLimited = true;
+        is_limited = true;
 
         if (ratio != nullptr)
         {
@@ -318,21 +315,21 @@ bool tr_torrentGetSeedRatio(tr_torrent const* tor, double* ratio)
         break;
 
     case TR_RATIOLIMIT_GLOBAL:
-        isLimited = tr_sessionIsRatioLimited(tor->session);
+        is_limited = tor->session->isRatioLimited();
 
-        if (isLimited && ratio != nullptr)
+        if (is_limited && ratio != nullptr)
         {
-            *ratio = tr_sessionGetRatioLimit(tor->session);
+            *ratio = tor->session->desiredRatio();
         }
 
         break;
 
     default: /* TR_RATIOLIMIT_UNLIMITED */
-        isLimited = false;
+        is_limited = false;
         break;
     }
 
-    return isLimited;
+    return is_limited;
 }
 
 /* returns true if the seed ratio applies --
@@ -431,11 +428,11 @@ bool tr_torrentGetSeedIdle(tr_torrent const* tor, uint16_t* idleMinutes)
         break;
 
     case TR_IDLELIMIT_GLOBAL:
-        isLimited = tr_sessionIsIdleLimited(tor->session);
+        isLimited = tor->session->isIdleLimited();
 
         if (isLimited && idleMinutes != nullptr)
         {
-            *idleMinutes = tr_sessionGetIdleLimit(tor->session);
+            *idleMinutes = tor->session->idleLimitMinutes();
         }
 
         break;
@@ -688,7 +685,7 @@ static void torrentInit(tr_torrent* tor, tr_ctor const* ctor)
 
     auto const lock = tor->unique_lock();
 
-    tor->queuePosition = tr_sessionCountTorrents(session);
+    tor->queuePosition = std::size(session->torrents());
 
     torrentInitFromInfoDict(tor);
 
@@ -758,22 +755,22 @@ static void torrentInit(tr_torrent* tor, tr_ctor const* ctor)
     if ((loaded & tr_resume::Speedlimit) == 0)
     {
         tr_torrentUseSpeedLimit(tor, TR_UP, false);
-        tor->setSpeedLimitBps(TR_UP, tr_sessionGetSpeedLimit_Bps(tor->session, TR_UP));
+        tor->setSpeedLimitBps(TR_UP, tor->session->speedLimitBps(TR_UP));
         tr_torrentUseSpeedLimit(tor, TR_DOWN, false);
-        tor->setSpeedLimitBps(TR_DOWN, tr_sessionGetSpeedLimit_Bps(tor->session, TR_DOWN));
+        tor->setSpeedLimitBps(TR_DOWN, tor->session->speedLimitBps(TR_DOWN));
         tr_torrentUseSessionLimits(tor, true);
     }
 
     if ((loaded & tr_resume::Ratiolimit) == 0)
     {
         tr_torrentSetRatioMode(tor, TR_RATIOLIMIT_GLOBAL);
-        tr_torrentSetRatioLimit(tor, tr_sessionGetRatioLimit(tor->session));
+        tr_torrentSetRatioLimit(tor, tor->session->desiredRatio());
     }
 
     if ((loaded & tr_resume::Idlelimit) == 0)
     {
         tr_torrentSetIdleMode(tor, TR_IDLELIMIT_GLOBAL);
-        tr_torrentSetIdleLimit(tor, tr_sessionGetIdleLimit(tor->session));
+        tr_torrentSetIdleLimit(tor, tor->session->idleLimitMinutes());
     }
 
     auto has_local_data = std::optional<bool>{};
@@ -864,7 +861,7 @@ tr_torrent* tr_torrentNew(tr_ctor* ctor, tr_torrent** setme_duplicate_of)
 {
     TR_ASSERT(ctor != nullptr);
     auto* const session = tr_ctorGetSession(ctor);
-    TR_ASSERT(tr_isSession(session));
+    TR_ASSERT(session != nullptr);
 
     // is the metainfo valid?
     auto metainfo = tr_ctorStealMetainfo(ctor);
@@ -1369,11 +1366,11 @@ static void torrentStartImpl(tr_torrent* const tor)
     tr_peerMgrStartTorrent(tor);
 }
 
-static bool torrentShouldQueue(tr_torrent const* tor)
+static bool torrentShouldQueue(tr_torrent const* const tor)
 {
     tr_direction const dir = tor->queueDirection();
 
-    return tr_sessionCountQueueFreeSlots(tor->session, dir) == 0;
+    return tor->session->countQueueFreeSlots(dir) == 0;
 }
 
 static void torrentStart(tr_torrent* tor, torrent_start_opts opts)
@@ -1614,7 +1611,7 @@ void tr_torrentFree(tr_torrent* tor)
     {
         tr_session* session = tor->session;
 
-        TR_ASSERT(tr_isSession(session));
+        TR_ASSERT(session != nullptr);
 
         auto const lock = tor->unique_lock();
 
@@ -2353,7 +2350,7 @@ void tr_torrent::refreshCurrentDir()
 
 static bool queueIsSequenced(tr_session* session)
 {
-    auto torrents = tr_sessionGetTorrents(session);
+    auto torrents = session->getAllTorrents();
     std::sort(
         std::begin(torrents),
         std::end(torrents),

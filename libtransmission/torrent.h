@@ -518,17 +518,17 @@ public:
 
     [[nodiscard]] auto allowsPex() const noexcept
     {
-        return this->isPublic() && this->session->isPexEnabled;
+        return this->isPublic() && this->session->allowsPEX();
     }
 
     [[nodiscard]] auto allowsDht() const
     {
-        return this->isPublic() && tr_sessionAllowsDHT(this->session);
+        return this->isPublic() && this->session->allowsDHT();
     }
 
     [[nodiscard]] auto allowsLpd() const // local peer discovery
     {
-        return this->isPublic() && tr_sessionAllowsLPD(this->session);
+        return this->isPublic() && this->session->allowsLPD();
     }
 
     [[nodiscard]] bool isPieceTransferAllowed(tr_direction direction) const;
@@ -755,7 +755,7 @@ private:
 
 constexpr bool tr_isTorrent(tr_torrent const* tor)
 {
-    return tor != nullptr && tr_isSession(tor->session);
+    return tor != nullptr && tor->session != nullptr;
 }
 
 /**

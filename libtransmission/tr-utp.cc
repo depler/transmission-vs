@@ -83,7 +83,7 @@ static void utp_on_accept(tr_session* const session, UTPSocket* const s)
     tr_address addr;
     tr_port port;
 
-    if (!tr_sessionIsUTPEnabled(session))
+    if (!session->allowsUTP())
     {
         utp_close(s);
         return;
@@ -131,7 +131,7 @@ static uint64 utp_callback(utp_callback_arguments* args)
 {
     auto* const session = static_cast<tr_session*>(utp_context_get_userdata(args->context));
 
-    TR_ASSERT(tr_isSession(session));
+    TR_ASSERT(session != nullptr);
     TR_ASSERT(session->utp_context == args->context);
 
     switch (args->callback_type)
@@ -161,7 +161,7 @@ static void reset_timer(tr_session* session)
     auto interval = std::chrono::milliseconds{};
     auto const random_percent = tr_rand_int_weak(1000) / 1000.0;
 
-    if (tr_sessionIsUTPEnabled(session))
+    if (session->allowsUTP())
     {
         static auto constexpr MinInterval = UtpInterval * 0.5;
         static auto constexpr MaxInterval = UtpInterval * 1.5;

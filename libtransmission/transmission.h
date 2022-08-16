@@ -309,7 +309,7 @@ bool tr_sessionIsIncompleteDirEnabled(tr_session const* session);
  *
  * @see tr_sessionIsIncompleteFileNamingEnabled()
  */
-void tr_sessionSetIncompleteFileNamingEnabled(tr_session* session, bool);
+void tr_sessionSetIncompleteFileNamingEnabled(tr_session* session, bool enabled);
 
 /** @brief return true if files will end in ".part" until they're complete */
 bool tr_sessionIsIncompleteFileNamingEnabled(tr_session const* session);
@@ -530,6 +530,7 @@ enum tr_direction
 ****  Primary session speed limits
 ***/
 
+void tr_sessionSetSpeedLimit_Bps(tr_session*, tr_direction, unsigned int Bps);
 void tr_sessionSetSpeedLimit_KBps(tr_session*, tr_direction, unsigned int KBps);
 unsigned int tr_sessionGetSpeedLimit_KBps(tr_session const*, tr_direction);
 
@@ -576,24 +577,22 @@ using tr_altSpeedFunc = void (*)(tr_session*, bool active, bool userDriven, void
 
 void tr_sessionSetAltSpeedFunc(tr_session*, tr_altSpeedFunc, void*);
 
-bool tr_sessionGetActiveSpeedLimit_KBps(tr_session const* session, tr_direction dir, double* setme);
-
 /***
 ****
 ***/
 
 double tr_sessionGetRawSpeed_KBps(tr_session const*, tr_direction);
 
-void tr_sessionSetRatioLimited(tr_session*, bool isLimited);
+void tr_sessionSetRatioLimited(tr_session*, bool is_limited);
 bool tr_sessionIsRatioLimited(tr_session const*);
 
-void tr_sessionSetRatioLimit(tr_session*, double desiredRatio);
+void tr_sessionSetRatioLimit(tr_session*, double desired_ratio);
 double tr_sessionGetRatioLimit(tr_session const*);
 
-void tr_sessionSetIdleLimited(tr_session*, bool isLimited);
+void tr_sessionSetIdleLimited(tr_session*, bool is_limited);
 bool tr_sessionIsIdleLimited(tr_session const*);
 
-void tr_sessionSetIdleLimit(tr_session*, uint16_t idleMinutes);
+void tr_sessionSetIdleLimit(tr_session*, uint16_t idle_minutes);
 uint16_t tr_sessionGetIdleLimit(tr_session const*);
 
 void tr_sessionSetPeerLimit(tr_session*, uint16_t max_global_peers);
@@ -756,7 +755,7 @@ bool tr_sessionIsScriptEnabled(tr_session const*, TrScript);
  *
  * Passing nullptr for a filename will clear the blocklist.
  */
-size_t tr_blocklistSetContent(tr_session* session, char const* filename);
+size_t tr_blocklistSetContent(tr_session* session, char const* content_filename);
 
 size_t tr_blocklistGetRuleCount(tr_session const* session);
 

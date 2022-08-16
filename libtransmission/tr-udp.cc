@@ -92,7 +92,7 @@ static void set_socket_buffers(tr_socket_t fd, bool large)
 
 void tr_udpSetSocketBuffers(tr_session* session)
 {
-    bool const utp = tr_sessionIsUTPEnabled(session);
+    bool const utp = session->allowsUTP();
 
     if (session->udp_socket != TR_BAD_SOCKET)
     {
@@ -224,7 +224,7 @@ FAIL:
 
 static void event_callback(evutil_socket_t s, [[maybe_unused]] short type, void* vsession)
 {
-    TR_ASSERT(tr_isSession(static_cast<tr_session*>(vsession)));
+    TR_ASSERT(vsession != nullptr);
     TR_ASSERT(type == EV_READ);
 
     unsigned char buf[4096];
@@ -245,7 +245,7 @@ static void event_callback(evutil_socket_t s, [[maybe_unused]] short type, void*
     {
         if (buf[0] == 'd')
         {
-            if (tr_sessionAllowsDHT(session))
+            if (session->allowsDHT())
             {
                 buf[rc] = '\0'; /* required by the DHT code */
                 tr_dhtCallback(buf, rc, (struct sockaddr*)&from, fromlen, vsession);
@@ -260,7 +260,7 @@ static void event_callback(evutil_socket_t s, [[maybe_unused]] short type, void*
         }
         else
         {
-            if (tr_sessionIsUTPEnabled(session))
+            if (session->allowsUTP())
             {
                 if (!tr_utpPacket(buf, rc, (struct sockaddr*)&from, fromlen, session))
                 {
@@ -290,14 +290,13 @@ void tr_udpInit(tr_session* ss)
     }
     else
     {
-        auto is_default = bool{};
-        tr_address const* public_addr = tr_sessionGetPublicAddress(ss, TR_AF_INET, &is_default);
+        auto const [public_addr, is_default] = ss->publicAddress(TR_AF_INET);
 
         auto sin = sockaddr_in{};
         sin.sin_family = AF_INET;
-        if (public_addr != nullptr && !is_default)
+        if (!is_default)
         {
-            memcpy(&sin.sin_addr, &public_addr->addr.addr4, sizeof(struct in_addr));
+            memcpy(&sin.sin_addr, &public_addr.addr.addr4, sizeof(struct in_addr));
         }
 
         sin.sin_port = ss->udp_port.network();
@@ -308,7 +307,7 @@ void tr_udpInit(tr_session* ss)
             auto const error_code = errno;
             tr_logAddWarn(fmt::format(
                 _("Couldn't bind IPv4 socket {address}: {error} ({error_code})"),
-                fmt::arg("address", public_addr != nullptr ? public_addr->readable(ss->udp_port) : "?"),
+                fmt::arg("address", public_addr.readable(ss->udp_port)),
                 fmt::arg("error", tr_strerror(error_code)),
                 fmt::arg("error_code", error_code)));
             tr_netCloseSocket(ss->udp_socket);
@@ -346,7 +345,7 @@ void tr_udpInit(tr_session* ss)
 
     tr_udpSetSocketTOS(ss);
 
-    if (ss->isDHTEnabled)
+    if (ss->allowsDHT())
     {
         tr_dhtInit(ss);
     }
