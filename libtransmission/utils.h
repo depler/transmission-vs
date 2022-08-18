@@ -128,25 +128,10 @@ void* tr_malloc(size_t size);
 /** @brief Portability wrapper around calloc() in which `0' is a safe argument */
 void* tr_malloc0(size_t size);
 
-/** @brief Portability wrapper around reallocf() in which `0' is a safe argument */
-void* tr_realloc(void* p, size_t size);
-
 /** @brief Portability wrapper around free() in which `nullptr' is a safe argument */
 void tr_free(void* p);
 
 #define tr_new(struct_type, n_structs) (static_cast<struct_type*>(tr_malloc(sizeof(struct_type) * (size_t)(n_structs))))
-
-#define tr_new0(struct_type, n_structs) (static_cast<struct_type*>(tr_malloc0(sizeof(struct_type) * (size_t)(n_structs))))
-
-#define tr_renew(struct_type, mem, n_structs) \
-    (static_cast<struct_type*>(tr_realloc((mem), sizeof(struct_type) * (size_t)(n_structs))))
-
-/**
- * @brief make a newly-allocated copy of a string
- * @param in is a void* so that callers can pass in both signed & unsigned without a cast
- * @return a newly-allocated copy of `in' that can be freed with tr_free()
- */
-[[nodiscard]] char* tr_strdup(void const* in);
 
 constexpr bool tr_str_is_empty(char const* value)
 {
@@ -232,9 +217,25 @@ constexpr bool tr_strvSep(std::string_view* sv, std::string_view* token, char de
 
 [[nodiscard]] std::string_view tr_strvStrip(std::string_view str);
 
-[[nodiscard]] char* tr_strvDup(std::string_view) TR_GNUC_MALLOC;
+[[nodiscard]] std::string tr_strvUtf8Clean(std::string_view cleanme);
 
-std::string& tr_strvUtf8Clean(std::string_view cleanme, std::string& setme);
+/**
+ * @brief copies `src` into `buf`.
+ *
+ * - Always returns std::size(src).
+ * - `src` will be copied into `buf` iff `buflen >= std::size(src)`
+ * - `buf` will also be zero terminated iff `buflen >= std::size(src) + 1`.
+ */
+size_t tr_strvToBuf(std::string_view src, char* buf, size_t buflen);
+
+/**
+ * @brief copies `src` into `buf`.
+ *
+ * - Always returns std::size(src).
+ * - `src` will be copied into `buf` iff `buflen >= std::size(src)`
+ * - `buf` will also be zero terminated iff `buflen >= std::size(src) + 1`.
+ */
+size_t tr_strvToBuf(std::string_view src, char* buf, size_t buflen);
 
 /***
 ****
@@ -247,8 +248,7 @@ std::string& tr_strvUtf8Clean(std::string_view cleanme, std::string& setme);
 /**
  * @brief Given a string like "1-4" or "1-4,6,9,14-51", this returns a
  *        newly-allocated array of all the integers in the set.
- * @return a newly-allocated array of integers that must be freed with tr_free(),
- *         or nullptr if a fragment of the string can't be parsed.
+ * @return a vector of integers, which is empty if the string can't be parsed.
  *
  * For example, "5-8" will return [ 5, 6, 7, 8 ] and setmeCount will be 4.
  */

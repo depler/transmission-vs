@@ -5,11 +5,13 @@
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
-#include <csignal> /* sig_atomic_t */
+#include <csignal> // for sig_atomic_t
+#include <cstdlib> // for abort()
 #include <cstdio>
-#include <cstring> /* memcpy(), memset() */
+#include <cstring> // for memcpy(), memset()
 #include <ctime>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -295,7 +297,7 @@ int tr_dhtInit(tr_session* ss)
             nodes6.assign(raw, raw + raw_len);
         }
 
-        tr_variantFree(&benc);
+        tr_variantClear(&benc);
     }
 
     if (have_id)
@@ -403,7 +405,7 @@ void tr_dhtUninit(tr_session* ss)
 
         auto const dat_file = tr_pathbuf{ ss->configDir(), "/dht.dat"sv };
         tr_variantToFile(&benc, TR_VARIANT_FMT_BENC, dat_file.sv());
-        tr_variantFree(&benc);
+        tr_variantClear(&benc);
     }
 
     dht_uninit();

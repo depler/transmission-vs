@@ -4,7 +4,6 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm> // std::partial_sort(), std::min(), std::max()
-#include <cerrno> /* ENOENT */
 #include <climits> /* INT_MAX */
 #include <condition_variable>
 #include <csignal>
@@ -18,6 +17,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #ifndef _WIN32
@@ -296,7 +296,7 @@ tr_session::PublicAddressResult tr_session::publicAddress(tr_address_type type) 
 
 void tr_sessionGetDefaultSettings(tr_variant* setme_dictionary)
 {
-    auto* const download_dir = tr_getDefaultDownloadDir();
+    auto const download_dir = tr_getDefaultDownloadDir();
 
     auto* const d = setme_dictionary;
     TR_ASSERT(tr_variantIsDict(d));
@@ -376,8 +376,6 @@ void tr_sessionGetDefaultSettings(tr_variant* setme_dictionary)
     tr_variantDictAddBool(d, TR_KEY_anti_brute_force_enabled, true);
     tr_variantDictAddStrView(d, TR_KEY_announce_ip, "");
     tr_variantDictAddBool(d, TR_KEY_announce_ip_enabled, false);
-
-    tr_free(download_dir);
 }
 
 void tr_sessionGetSettings(tr_session const* s, tr_variant* setme_dictionary)
@@ -469,9 +467,8 @@ static void getSettingsFilename(tr_pathbuf& setme, char const* config_dir, char 
         return;
     }
 
-    auto* const default_config_dir = tr_getDefaultConfigDir(appname);
+    auto const default_config_dir = tr_getDefaultConfigDir(appname);
     setme.assign(std::string_view{ default_config_dir }, "/settings.json"sv);
-    tr_free(default_config_dir);
 }
 
 bool tr_sessionLoadSettings(tr_variant* dict, char const* config_dir, char const* appName)
@@ -484,7 +481,7 @@ bool tr_sessionLoadSettings(tr_variant* dict, char const* config_dir, char const
     tr_variantInitDict(dict, 0);
     tr_sessionGetDefaultSettings(dict);
     tr_variantMergeDicts(dict, &oldDict);
-    tr_variantFree(&oldDict);
+    tr_variantClear(&oldDict);
 
     /* file settings override the defaults */
     auto fileSettings = tr_variant{};
@@ -498,7 +495,7 @@ bool tr_sessionLoadSettings(tr_variant* dict, char const* config_dir, char const
     else if (tr_variantFromFile(&fileSettings, TR_VARIANT_PARSE_JSON, filename))
     {
         tr_variantMergeDicts(dict, &fileSettings);
-        tr_variantFree(&fileSettings);
+        tr_variantClear(&fileSettings);
         success = true;
     }
     else
@@ -523,7 +520,7 @@ void tr_sessionSaveSettings(tr_session* session, char const* config_dir, tr_vari
     if (auto file_settings = tr_variant{}; tr_variantFromFile(&file_settings, TR_VARIANT_PARSE_JSON, filename))
     {
         tr_variantMergeDicts(&settings, &file_settings);
-        tr_variantFree(&file_settings);
+        tr_variantClear(&file_settings);
     }
 
     /* the client's settings override the file settings */
@@ -535,14 +532,14 @@ void tr_sessionSaveSettings(tr_session* session, char const* config_dir, tr_vari
         tr_variantInitDict(&sessionSettings, 0);
         tr_sessionGetSettings(session, &sessionSettings);
         tr_variantMergeDicts(&settings, &sessionSettings);
-        tr_variantFree(&sessionSettings);
+        tr_variantClear(&sessionSettings);
     }
 
     /* save the result */
     tr_variantToFile(&settings, TR_VARIANT_FMT_JSON, filename);
 
     /* cleanup */
-    tr_variantFree(&settings);
+    tr_variantClear(&settings);
 
     /* Write bandwidth groups limits to file  */
     bandwidthGroupWrite(session, config_dir);
@@ -698,7 +695,7 @@ void tr_session::initImpl(init_data& data)
     tr_utpInit(this);
 
     /* cleanup */
-    tr_variantFree(&settings);
+    tr_variantClear(&settings);
     data.done_cv.notify_one();
 }
 
@@ -2749,7 +2746,7 @@ static void bandwidthGroupRead(tr_session* session, std::string_view config_dir)
             group.honorParentLimits(TR_DOWN, honors);
         }
     }
-    tr_variantFree(&groups_dict);
+    tr_variantClear(&groups_dict);
 }
 
 static int bandwidthGroupWrite(tr_session const* session, std::string_view config_dir)
@@ -2774,7 +2771,7 @@ static int bandwidthGroupWrite(tr_session const* session, std::string_view confi
 
     auto const filename = tr_pathbuf{ config_dir, '/', BandwidthGroupsFilename };
     auto const ret = tr_variantToFile(&groups_dict, TR_VARIANT_FMT_JSON, filename);
-    tr_variantFree(&groups_dict);
+    tr_variantClear(&groups_dict);
     return ret;
 }
 

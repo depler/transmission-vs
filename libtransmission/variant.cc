@@ -4,7 +4,6 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm> // std::sort
-#include <cerrno>
 #include <cstring>
 #include <stack>
 #include <string>
@@ -43,12 +42,6 @@ static bool tr_variantIsContainer(tr_variant const* v)
     return tr_variantIsList(v) || tr_variantIsDict(v);
 }
 
-static bool tr_variantIsSomething(tr_variant const* v)
-{
-    return tr_variantIsContainer(v) || tr_variantIsInt(v) || tr_variantIsString(v) || tr_variantIsReal(v) ||
-        tr_variantIsBool(v);
-}
-
 void tr_variantInit(tr_variant* v, char type)
 {
     v->type = type;
@@ -69,7 +62,7 @@ static void tr_variant_string_clear(struct tr_variant_string* str)
 {
     if (str->type == TR_STRING_TYPE_HEAP)
     {
-        tr_free((char*)(str->str.str));
+        delete[]((char*)(str->str.str));
     }
 
     *str = STRING_INIT;
@@ -130,7 +123,7 @@ static void tr_variant_string_set_string(struct tr_variant_string* str, std::str
     }
     else
     {
-        auto* tmp = tr_new(char, len + 1);
+        auto* tmp = new char[len + 1];
         std::copy_n(bytes, len, tmp);
         tmp[len] = '\0';
         str->type = TR_STRING_TYPE_HEAP;
@@ -198,7 +191,7 @@ bool tr_variantListRemove(tr_variant* list, size_t pos)
 {
     if (tr_variantIsList(list) && pos < list->val.l.count)
     {
-        tr_variantFree(&list->val.l.vals[pos]);
+        tr_variantClear(&list->val.l.vals[pos]);
         tr_removeElementFromArray(list->val.l.vals, pos, sizeof(tr_variant), list->val.l.count);
         --list->val.l.count;
         return true;
@@ -431,7 +424,10 @@ static tr_variant* containerReserve(tr_variant* v, size_t count)
             n *= 2U;
         }
 
-        v->val.l.vals = tr_renew(tr_variant, v->val.l.vals, n);
+        auto* vals = new tr_variant[n];
+        std::copy_n(v->val.l.vals, v->val.l.count, vals);
+        delete[] v->val.l.vals;
+        v->val.l.vals = vals;
         v->val.l.alloc = n;
     }
 
@@ -651,7 +647,7 @@ bool tr_variantDictRemove(tr_variant* dict, tr_quark const key)
     {
         int const last = (int)dict->val.l.count - 1;
 
-        tr_variantFree(&dict->val.l.vals[i]);
+        tr_variantClear(&dict->val.l.vals[i]);
 
         if (i != last)
         {
@@ -912,7 +908,7 @@ static void freeStringFunc(tr_variant const* v, void* /*user_data*/)
 
 static void freeContainerEndFunc(tr_variant const* v, void* /*user_data*/)
 {
-    tr_free(v->val.l.vals);
+    delete[] v->val.l.vals;
 }
 
 static struct VariantWalkFuncs const freeWalkFuncs = {
@@ -925,12 +921,14 @@ static struct VariantWalkFuncs const freeWalkFuncs = {
     freeContainerEndFunc, //
 };
 
-void tr_variantFree(tr_variant* v)
+void tr_variantClear(tr_variant* v)
 {
-    if (tr_variantIsSomething(v))
+    if (!tr_variantIsEmpty(v))
     {
         tr_variantWalk(v, &freeWalkFuncs, nullptr, false);
     }
+
+    *v = {};
 }
 
 /***
@@ -1163,7 +1161,7 @@ bool tr_variantFromBuf(tr_variant* setme, int opts, std::string_view buf, char c
 
     if (!success)
     {
-        tr_variantFree(setme);
+        tr_variantClear(setme);
     }
 
     return success;

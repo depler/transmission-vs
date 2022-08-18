@@ -5,12 +5,13 @@
 
 #include <algorithm>
 #include <array>
-#include <cerrno>
 #include <chrono>
 #include <cstring> /* memcpy */
 #include <ctime>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #ifndef _WIN32
@@ -306,7 +307,7 @@ static void handle_rpc_from_json(struct evhttp_request* req, tr_rpc_server* serv
 
     if (have_content)
     {
-        tr_variantFree(&top);
+        tr_variantClear(&top);
     }
 }
 

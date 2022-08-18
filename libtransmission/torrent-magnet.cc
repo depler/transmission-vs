@@ -267,8 +267,8 @@ static bool useNewMetainfo(tr_torrent* tor, tr_incomplete_metadata const* m, tr_
     tr_buildMetainfoExceptInfoDict(tor->metainfo_, &top_v);
     tr_variantMergeDicts(tr_variantDictAddDict(&top_v, TR_KEY_info, 0), &info_dict_v);
     auto const benc = tr_variantToStr(&top_v, TR_VARIANT_FMT_BENC);
-    tr_variantFree(&top_v);
-    tr_variantFree(&info_dict_v);
+    tr_variantClear(&top_v);
+    tr_variantClear(&info_dict_v);
 
     // does this synthetic torrent file parse?
     auto metainfo = tr_torrent_metainfo{};
@@ -414,7 +414,12 @@ double tr_torrentGetMetadataPercent(tr_torrent const* tor)
     return m == nullptr || m->piece_count == 0 ? 0.0 : (m->piece_count - std::size(m->pieces_needed)) / (double)m->piece_count;
 }
 
-char* tr_torrentGetMagnetLink(tr_torrent const* tor)
+std::string tr_torrentGetMagnetLink(tr_torrent const* tor)
 {
-    return tr_strvDup(tor->metainfo_.magnet());
+    return std::string{ tor->metainfo_.magnet().sv() };
+}
+
+size_t tr_torrentGetMagnetLinkToBuf(tr_torrent const* tor, char* buf, size_t buflen)
+{
+    return tr_strvToBuf(tr_torrentGetMagnetLink(tor), buf, buflen);
 }
