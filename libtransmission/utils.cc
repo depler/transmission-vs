@@ -60,28 +60,6 @@ using namespace std::literals;
 
 time_t __tr_current_time = 0;
 
-/***
-****
-***/
-
-void* tr_malloc(size_t size)
-{
-    return size != 0 ? malloc(size) : nullptr;
-}
-
-void* tr_malloc0(size_t size)
-{
-    return size != 0 ? calloc(1, size) : nullptr;
-}
-
-void tr_free(void* p)
-{
-    if (p != nullptr)
-    {
-        free(p);
-    }
-}
-
 /**
 ***
 **/
@@ -342,7 +320,12 @@ void tr_removeElementFromArray(void* array, size_t index_to_remove, size_t sizeo
 ****
 ***/
 
-bool tr_utf8_validate(std::string_view sv, char const** good_end)
+namespace
+{
+namespace tr_strvUtf8Clean_impl
+{
+
+bool validateUtf8(std::string_view sv, char const** good_end)
 {
     auto const* begin = std::data(sv);
     auto const* const end = begin + std::size(sv);
@@ -371,10 +354,6 @@ bool tr_utf8_validate(std::string_view sv, char const** good_end)
     return all_good;
 }
 
-namespace
-{
-namespace tr_strvUtf8Clean_impl
-{
 std::string strip_non_utf8(std::string_view sv)
 {
     auto out = std::string{};
@@ -426,7 +405,7 @@ std::string tr_strvUtf8Clean(std::string_view cleanme)
 {
     using namespace tr_strvUtf8Clean_impl;
 
-    if (tr_utf8_validate(cleanme, nullptr))
+    if (validateUtf8(cleanme, nullptr))
     {
         return std::string{ cleanme };
     }
@@ -999,16 +978,16 @@ int tr_env_get_int(char const* key, int default_value)
 
 #ifdef _WIN32
 
-    char value[16];
+    auto value = std::array<char, 16>{};
 
-    if (GetEnvironmentVariableA(key, value, TR_N_ELEMENTS(value)) > 1)
+    if (GetEnvironmentVariableA(key, std::data(value), std::size(value)) > 1)
     {
-        return atoi(value);
+        return atoi(std::data(value));
     }
 
 #else
 
-    if (char const* value = getenv(key); !tr_str_is_empty(value))
+    if (char const* const value = getenv(key); !tr_str_is_empty(value))
     {
         return atoi(value);
     }

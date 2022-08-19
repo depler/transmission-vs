@@ -12,10 +12,6 @@
 ****
 ***/
 
-#ifndef __has_attribute
-#define __has_attribute(x) 0
-#endif
-
 #ifndef __has_builtin
 #define __has_builtin(x) 0
 #endif
@@ -62,18 +58,7 @@
 ****
 ***/
 
-#if __has_attribute(__malloc__) || TR_GNUC_CHECK_VERSION(2, 96)
-#define TR_GNUC_MALLOC __attribute__((__malloc__))
-#else
-#define TR_GNUC_MALLOC
-#endif
-
-/***
-****
-***/
-
 #define TR_PATH_DELIMITER '/'
-#define TR_PATH_DELIMITER_STR "/"
 
 /* Only use this macro to suppress false-positive alignment warnings */
 #define TR_DISCARD_ALIGN(ptr, type) ((type)(void*)(ptr))
