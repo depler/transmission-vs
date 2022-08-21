@@ -91,7 +91,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="arc4\arc4.c" />
     <ClCompile Include="b64\cdecode.c" />
     <ClCompile Include="b64\cencode.c" />
     <ClCompile Include="curl\altsvc.c" />
@@ -443,7 +442,6 @@
     <ClCompile Include="zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="arc4\arc4.h" />
     <ClInclude Include="b64\cdecode.h" />
     <ClInclude Include="b64\cencode.h" />
     <ClInclude Include="b64\decode.h" />
@@ -741,6 +739,7 @@
     <ClInclude Include="libtransmission\torrent-metainfo.h" />
     <ClInclude Include="libtransmission\torrent.h" />
     <ClInclude Include="libtransmission\torrents.h" />
+    <ClInclude Include="libtransmission\tr-arc4.h" />
     <ClInclude Include="libtransmission\tr-assert.h" />
     <ClInclude Include="libtransmission\tr-dht.h" />
     <ClInclude Include="libtransmission\tr-getopt.h" />

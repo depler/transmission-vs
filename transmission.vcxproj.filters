@@ -28,9 +28,6 @@
     <Filter Include="sys">
       <UniqueIdentifier>{54d0722c-6b9d-464d-84ae-97955dc0cf4e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="arc4">
-      <UniqueIdentifier>{165e0ae6-14e0-4589-88a4-3a55f4d4a90a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="daemon">
       <UniqueIdentifier>{3fab00f9-ae19-49ec-b353-0a37221a6904}</UniqueIdentifier>
     </Filter>
@@ -218,9 +215,6 @@
     </ClCompile>
     <ClCompile Include="zlib\zutil.c">
       <Filter>zlib</Filter>
-    </ClCompile>
-    <ClCompile Include="arc4\arc4.c">
-      <Filter>arc4</Filter>
     </ClCompile>
     <ClCompile Include="miniupnp\addr_is_reserved.c">
       <Filter>miniupnp</Filter>
@@ -1307,9 +1301,6 @@
     <ClInclude Include="zlib\zutil.h">
       <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="arc4\arc4.h">
-      <Filter>arc4</Filter>
-    </ClInclude>
     <ClInclude Include="miniupnp\addr_is_reserved.h">
       <Filter>miniupnp</Filter>
     </ClInclude>
@@ -2217,6 +2208,9 @@
       <Filter>libtransmission</Filter>
     </ClInclude>
     <ClInclude Include="libtransmission\watchdir-base.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-arc4.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
   </ItemGroup>
