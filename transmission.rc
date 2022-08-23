@@ -2,6 +2,8 @@
 #include "winres.h"
 #undef APSTUDIO_READONLY_SYMBOLS
 
+#include <libtransmission/version.h>
+
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
 
@@ -23,7 +25,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "ProductName", "Transmission"
-            VALUE "ProductVersion", "2022-08-09"
+            VALUE "ProductVersion", BUILD_DATE
             VALUE "FileVersion", "4.0.0.0"
             VALUE "LegalCopyright", "https://github.com/depler/transmission-vs"
         END
