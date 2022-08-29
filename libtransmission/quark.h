@@ -364,6 +364,7 @@ enum
     TR_KEY_status,
     TR_KEY_statusbar_stats,
     TR_KEY_tag,
+    TR_KEY_tcp_enabled,
     TR_KEY_tier,
     TR_KEY_time_checked,
     TR_KEY_torrent_added,
@@ -428,11 +429,6 @@ enum
  * @return true if the specified string exists as a quark
  */
 [[nodiscard]] std::optional<tr_quark> tr_quark_lookup(std::string_view key);
-
-/**
- * Get the string that corresponds to the specified quark
- */
-[[nodiscard]] char const* tr_quark_get_string(tr_quark quark, size_t* len = nullptr);
 
 /**
  * Get the string view that corresponds to the specified quark.

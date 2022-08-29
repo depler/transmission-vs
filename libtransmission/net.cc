@@ -284,6 +284,11 @@ struct tr_peer_socket tr_netOpenPeerSocket(tr_session* session, tr_address const
 {
     TR_ASSERT(tr_address_is_valid(addr));
 
+    if (!session->allowsTCP())
+    {
+        return {};
+    }
+
     if (!tr_address_is_valid_for_peers(addr, port))
     {
         return {};
@@ -414,10 +419,10 @@ static tr_socket_t tr_netBindTCPImpl(tr_address const* addr, tr_port port, bool 
 {
     TR_ASSERT(tr_address_is_valid(addr));
 
-    static int const domains[NUM_TR_AF_INET_TYPES] = { AF_INET, AF_INET6 };
+    static auto constexpr Domains = std::array<int, NUM_TR_AF_INET_TYPES>{ AF_INET, AF_INET6 };
     struct sockaddr_storage sock;
 
-    auto const fd = socket(domains[addr->type], SOCK_STREAM, 0);
+    auto const fd = socket(Domains[addr->type], SOCK_STREAM, 0);
     if (fd == TR_BAD_SOCKET)
     {
         *errOut = sockerrno;
@@ -706,7 +711,7 @@ static int tr_globalAddress(int af, void* addr, int* addr_len)
 /* Return our global IPv6 address, with caching. */
 unsigned char const* tr_globalIPv6(tr_session const* session)
 {
-    static unsigned char ipv6[16];
+    static auto ipv6 = std::array<unsigned char, 16>{};
     static time_t last_time = 0;
     static bool have_ipv6 = false;
 
@@ -714,7 +719,7 @@ unsigned char const* tr_globalIPv6(tr_session const* session)
     if (auto const now = tr_time(); last_time < now - 1800)
     {
         int addrlen = 16;
-        int const rc = tr_globalAddress(AF_INET6, ipv6, &addrlen);
+        int const rc = tr_globalAddress(AF_INET6, std::data(ipv6), &addrlen);
         have_ipv6 = rc >= 0 && addrlen == 16;
         last_time = now;
     }
@@ -724,11 +729,11 @@ unsigned char const* tr_globalIPv6(tr_session const* session)
         return nullptr; /* No IPv6 address at all. */
     }
 
-    /* Return the default address. This is useful for checking
-       for connectivity in general. */
+    /* Return the default address.
+     * This is useful for checking for connectivity in general. */
     if (session == nullptr)
     {
-        return ipv6;
+        return std::data(ipv6);
     }
 
     /* We have some sort of address, now make sure that we return
@@ -738,10 +743,10 @@ unsigned char const* tr_globalIPv6(tr_session const* session)
     if (!is_default)
     {
         /* Explicitly bound. Return that address. */
-        memcpy(ipv6, ipv6_bindaddr.addr.addr6.s6_addr, 16);
+        memcpy(std::data(ipv6), ipv6_bindaddr.addr.addr6.s6_addr, 16);
     }
 
-    return ipv6;
+    return std::data(ipv6);
 }
 
 /***
@@ -765,7 +770,7 @@ static bool isMartianAddr(struct tr_address const* a)
 {
     TR_ASSERT(tr_address_is_valid(a));
 
-    static unsigned char const zeroes[16] = {};
+    static auto constexpr Zeroes = std::array<unsigned char, 16>{};
 
     switch (a->type)
     {
@@ -778,7 +783,8 @@ static bool isMartianAddr(struct tr_address const* a)
     case TR_AF_INET6:
         {
             auto const* const address = (unsigned char const*)&a->addr.addr6;
-            return address[0] == 0xFF || (memcmp(address, zeroes, 15) == 0 && (address[15] == 0 || address[15] == 1));
+            return address[0] == 0xFF ||
+                (memcmp(address, std::data(Zeroes), 15) == 0 && (address[15] == 0 || address[15] == 1));
         }
 
     default:

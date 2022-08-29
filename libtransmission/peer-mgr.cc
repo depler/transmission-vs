@@ -4,6 +4,7 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm>
+#include <array>
 #include <cerrno> /* error codes ERANGE, ... */
 #include <chrono>
 #include <climits> /* INT_MAX */
@@ -110,6 +111,11 @@ public:
     [[nodiscard]] bool isDHTEnabled() const override
     {
         return tr_dhtEnabled(&session_);
+    }
+
+    [[nodiscard]] bool allowsTCP() const override
+    {
+        return session_.allowsTCP();
     }
 
     void setUTPFailed(tr_sha1_digest_t const& info_hash, tr_address addr) override
@@ -1221,9 +1227,9 @@ static bool on_handshake_done(tr_handshake_result const& result)
             auto client = tr_quark{ TR_KEY_NONE };
             if (result.peer_id)
             {
-                char buf[128] = {};
-                tr_clientForId(buf, sizeof(buf), *result.peer_id);
-                client = tr_quark_new(buf);
+                auto buf = std::array<char, 128>{};
+                tr_clientForId(std::data(buf), sizeof(buf), *result.peer_id);
+                client = tr_quark_new(std::data(buf));
             }
 
             /* this steals its refcount too, which is balanced by our unref in peerDelete() */
@@ -2821,6 +2827,11 @@ void initiateConnection(tr_peerMgr* mgr, tr_swarm* s, peer_atom& atom)
            originally came from PEX and doesn't have the uTP flag, skip the
            uTP connection attempt.  Are we being optimistic here? */
         utp = utp && (atom.flags & ADDED_F_UTP_FLAGS) != 0;
+    }
+
+    if (!utp && !mgr->session->allowsTCP())
+    {
+        return;
     }
 
     tr_logAddTraceSwarm(s, fmt::format("Starting an OUTGOING {} connection with {}", utp ? " µTP" : "TCP", atom.readable()));

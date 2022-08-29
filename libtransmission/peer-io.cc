@@ -4,6 +4,7 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
@@ -510,6 +511,7 @@ tr_peerIo* tr_peerIoNew(
 #else
     TR_ASSERT(socket.type == TR_PEER_SOCKET_TYPE_TCP);
 #endif
+    TR_ASSERT(session->allowsTCP() || socket.type != TR_PEER_SOCKET_TYPE_TCP);
 
     if (socket.type == TR_PEER_SOCKET_TYPE_TCP)
     {
@@ -587,6 +589,7 @@ tr_peerIo* tr_peerIoNewOutgoing(
 {
     TR_ASSERT(session != nullptr);
     TR_ASSERT(tr_address_is_valid(addr));
+    TR_ASSERT(utp || session->allowsTCP());
 
     auto socket = tr_peer_socket{};
 
@@ -824,12 +827,14 @@ void tr_peerIoClear(tr_peerIo* io)
     tr_peerIoSetIOFuncs(io, nullptr, nullptr, nullptr, nullptr);
     tr_peerIoSetEnabled(io, TR_UP, false);
     tr_peerIoSetEnabled(io, TR_DOWN, false);
+    io_close_socket(io);
 }
 
 int tr_peerIoReconnect(tr_peerIo* io)
 {
     TR_ASSERT(tr_isPeerIo(io));
     TR_ASSERT(!io->isIncoming());
+    TR_ASSERT(io->session->allowsTCP());
 
     tr_session* session = tr_peerIoGetSession(io);
 
@@ -1004,16 +1009,15 @@ void tr_peerIoReadUint32(tr_peerIo* io, struct evbuffer* inbuf, uint32_t* setme)
     *setme = ntohl(tmp);
 }
 
-void tr_peerIoDrain(tr_peerIo* io, struct evbuffer* inbuf, size_t byteCount)
+void tr_peerIoDrain(tr_peerIo* io, struct evbuffer* inbuf, size_t byte_count)
 {
-    char buf[4096];
-    size_t const buflen = sizeof(buf);
+    auto buf = std::array<char, 4096>{};
 
-    while (byteCount > 0)
+    while (byte_count > 0)
     {
-        size_t const thisPass = std::min(byteCount, buflen);
-        tr_peerIoReadBytes(io, inbuf, buf, thisPass);
-        byteCount -= thisPass;
+        size_t const this_pass = std::min(byte_count, std::size(buf));
+        tr_peerIoReadBytes(io, inbuf, std::data(buf), this_pass);
+        byte_count -= this_pass;
     }
 }
 

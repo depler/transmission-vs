@@ -85,7 +85,7 @@ struct tr_rpc_address
     {
         struct in_addr addr4;
         struct in6_addr addr6;
-        char unixSocketPath[TrUnixAddrStrLen];
+        std::array<char, TrUnixAddrStrLen> unixSocketPath;
     } addr;
 
     void set_inaddr_any()
@@ -170,27 +170,27 @@ static evbuffer* make_response(struct evhttp_request* req, tr_rpc_server* server
     {
         auto const max_compressed_len = libdeflate_deflate_compress_bound(server->compressor.get(), std::size(content));
 
-        struct evbuffer_iovec iovec[1];
-        evbuffer_reserve_space(out, std::max(std::size(content), max_compressed_len), iovec, 1);
+        struct evbuffer_iovec iovec;
+        evbuffer_reserve_space(out, std::max(std::size(content), max_compressed_len), &iovec, 1);
 
         auto const compressed_len = libdeflate_gzip_compress(
             server->compressor.get(),
             std::data(content),
             std::size(content),
-            iovec[0].iov_base,
-            iovec[0].iov_len);
+            iovec.iov_base,
+            iovec.iov_len);
         if (0 < compressed_len && compressed_len < std::size(content))
         {
-            iovec[0].iov_len = compressed_len;
+            iovec.iov_len = compressed_len;
             evhttp_add_header(req->output_headers, "Content-Encoding", "gzip");
         }
         else
         {
-            std::copy(std::begin(content), std::end(content), static_cast<char*>(iovec[0].iov_base));
-            iovec[0].iov_len = std::size(content);
+            std::copy(std::begin(content), std::end(content), static_cast<char*>(iovec.iov_base));
+            iovec.iov_len = std::size(content);
         }
 
-        evbuffer_commit_space(out, iovec, 1);
+        evbuffer_commit_space(out, &iovec, 1);
     }
 
     return out;
@@ -555,7 +555,7 @@ static char const* tr_rpc_address_to_string(tr_rpc_address const& addr, char* bu
         return evutil_inet_ntop(AF_INET6, &addr.addr, buf, buflen);
 
     case TR_RPC_AF_UNIX:
-        tr_strlcpy(buf, addr.addr.unixSocketPath, buflen);
+        tr_strlcpy(buf, std::data(addr.addr.unixSocketPath), buflen);
         return buf;
 
     default:
@@ -565,10 +565,10 @@ static char const* tr_rpc_address_to_string(tr_rpc_address const& addr, char* bu
 
 static std::string tr_rpc_address_with_port(tr_rpc_server const* server)
 {
-    char addr_buf[TrUnixAddrStrLen];
-    tr_rpc_address_to_string(*server->bindAddress, addr_buf, sizeof(addr_buf));
+    auto addr_buf = std::array<char, TrUnixAddrStrLen>{};
+    tr_rpc_address_to_string(*server->bindAddress, std::data(addr_buf), std::size(addr_buf));
 
-    std::string addr_port_str{ addr_buf };
+    std::string addr_port_str = std::data(addr_buf);
     if (server->bindAddress->type != TR_RPC_AF_UNIX)
     {
         addr_port_str.append(":" + std::to_string(server->port().host()));
@@ -590,7 +590,7 @@ static bool tr_rpc_address_from_string(tr_rpc_address& dst, std::string_view src
         }
 
         dst.type = TR_RPC_AF_UNIX;
-        tr_strlcpy(dst.addr.unixSocketPath, std::string{ src }.c_str(), TrUnixAddrStrLen);
+        tr_strlcpy(std::data(dst.addr.unixSocketPath), std::string{ src }.c_str(), std::size(dst.addr.unixSocketPath));
         return true;
     }
 
@@ -618,7 +618,7 @@ static bool bindUnixSocket(
 #ifdef _WIN32
     tr_logAddError(fmt::format(
         _("Unix sockets are unsupported on Windows. Please change '{key}' in your settings."),
-        fmt::arg("key", tr_quark_get_string(TR_KEY_rpc_bind_address))));
+        fmt::arg("key", tr_quark_get_string_view(TR_KEY_rpc_bind_address))));
     return false;
 #else
     struct sockaddr_un addr;
@@ -883,7 +883,7 @@ void tr_rpc_server::setAntiBruteForceEnabled(bool enabled) noexcept
 
 static void missing_settings_key(tr_quark const q)
 {
-    tr_logAddDebug(fmt::format("Couldn't find settings key '{}'", tr_quark_get_string(q)));
+    tr_logAddDebug(fmt::format("Couldn't find settings key '{}'", tr_quark_get_string_view(q)));
 }
 
 tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
@@ -1066,7 +1066,7 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
     {
         tr_logAddWarn(fmt::format(
             _("The '{key}' setting is '{value}' but must be an IPv4 or IPv6 address or a Unix socket path. Using default value '0.0.0.0'"),
-            fmt::format("key", tr_quark_get_string(key)),
+            fmt::format("key", tr_quark_get_string_view(key)),
             fmt::format("value", sv)));
         bindAddress->set_inaddr_any();
     }

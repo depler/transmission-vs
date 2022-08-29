@@ -306,20 +306,6 @@ double tr_getRatio(uint64_t numerator, uint64_t denominator)
 ****
 ***/
 
-void tr_removeElementFromArray(void* array, size_t index_to_remove, size_t sizeof_element, size_t nmemb)
-{
-    auto* a = static_cast<char*>(array);
-
-    memmove(
-        a + sizeof_element * index_to_remove,
-        a + sizeof_element * (index_to_remove + 1),
-        sizeof_element * (--nmemb - index_to_remove));
-}
-
-/***
-****
-***/
-
 namespace
 {
 namespace tr_strvUtf8Clean_impl
@@ -736,7 +722,7 @@ uint64_t tr_htonll(uint64_t x)
     /* fallback code by bdonlan at https://stackoverflow.com/questions/809902/64-bit-ntohl-in-c/875505#875505 */
     union
     {
-        uint32_t lx[2];
+        std::array<uint32_t, 2> lx;
         uint64_t llx;
     } u;
     u.lx[0] = htonl(x >> 32);
@@ -757,7 +743,7 @@ uint64_t tr_ntohll(uint64_t x)
     /* fallback code by bdonlan at https://stackoverflow.com/questions/809902/64-bit-ntohl-in-c/875505#875505 */
     union
     {
-        uint32_t lx[2];
+        std::array<uint32_t, 2> lx;
         uint64_t llx;
     } u;
     u.llx = x;
@@ -1135,6 +1121,7 @@ template std::optional<char> tr_parseNum(std::string_view& sv, int base);
 template std::optional<unsigned long long> tr_parseNum(std::string_view& sv, int base);
 template std::optional<unsigned long> tr_parseNum(std::string_view& sv, int base);
 template std::optional<unsigned int> tr_parseNum(std::string_view& sv, int base);
+template std::optional<unsigned short> tr_parseNum(std::string_view& sv, int base);
 template std::optional<unsigned char> tr_parseNum(std::string_view& sv, int base);
 
 template<typename T, std::enable_if_t<std::is_floating_point<T>::value, bool>>

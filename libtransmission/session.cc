@@ -128,6 +128,58 @@ tr_peer_id_t tr_peerIdInit()
 ****
 ***/
 
+bool tr_session::LpdMediator::onPeerFound(std::string_view info_hash_str, tr_address address, tr_port port)
+{
+    auto const digest = tr_sha1_from_string(info_hash_str);
+    if (!digest)
+    {
+        return false;
+    }
+
+    tr_torrent* const tor = session_.torrents_.get(*digest);
+    if (!tr_isTorrent(tor) || !tor->allowsLpd())
+    {
+        return false;
+    }
+
+    // we found a suitable peer, add it to the torrent
+    auto pex = tr_pex{ address, port };
+    tr_peerMgrAddPex(tor, TR_PEER_FROM_LPD, &pex, 1U);
+    tr_logAddDebugTor(tor, fmt::format(FMT_STRING("Found a local peer from LPD ({:s})"), address.readable(port)));
+    return true;
+}
+
+std::vector<tr_lpd::Mediator::TorrentInfo> tr_session::LpdMediator::torrents() const
+{
+    auto ret = std::vector<tr_lpd::Mediator::TorrentInfo>{};
+    ret.reserve(std::size(session_.torrents()));
+    for (auto const* const tor : session_.torrents())
+    {
+        auto info = tr_lpd::Mediator::TorrentInfo{};
+        info.info_hash_str = tor->infoHashString();
+        info.activity = tr_torrentGetActivity(tor);
+        info.allows_lpd = tor->allowsLpd();
+        info.announce_after = tor->lpdAnnounceAt;
+        ret.emplace_back(info);
+    }
+    return ret;
+}
+
+void tr_session::LpdMediator::setNextAnnounceTime(std::string_view info_hash_str, time_t announce_after)
+{
+    if (auto digest = tr_sha1_from_string(info_hash_str); digest)
+    {
+        if (tr_torrent* const tor = session_.torrents_.get(*digest); tr_isTorrent(tor))
+        {
+            tor->lpdAnnounceAt = announce_after;
+        }
+    }
+}
+
+/***
+****
+***/
+
 std::optional<std::string> tr_session::WebMediator::cookieFile() const
 {
     auto const path = tr_pathbuf{ session_->configDir(), "/cookies.txt"sv };
@@ -251,6 +303,8 @@ static void accept_incoming_peer(evutil_socket_t fd, short /*what*/, void* vsess
 
 void tr_bindinfo::bindAndListenForIncomingPeers(tr_session* session)
 {
+    TR_ASSERT(session->allowsTCP());
+
     socket_ = tr_netBindTCP(&addr_, session->private_peer_port, false);
 
     if (socket_ != TR_BAD_SOCKET)
@@ -271,6 +325,8 @@ static void close_incoming_peer_port(tr_session* session)
 
 static void open_incoming_peer_port(tr_session* session)
 {
+    TR_ASSERT(session->allowsTCP());
+
     session->bind_ipv4.bindAndListenForIncomingPeers(session);
 
     if (tr_net_hasIPv6(session->private_peer_port))
@@ -401,6 +457,7 @@ void tr_sessionGetSettings(tr_session const* s, tr_variant* setme_dictionary)
     tr_variantDictAddBool(d, TR_KEY_dht_enabled, s->allowsDHT());
     tr_variantDictAddBool(d, TR_KEY_utp_enabled, s->allowsUTP());
     tr_variantDictAddBool(d, TR_KEY_lpd_enabled, s->allowsLPD());
+    tr_variantDictAddBool(d, TR_KEY_tcp_enabled, s->allowsTCP());
     tr_variantDictAddStr(d, TR_KEY_download_dir, tr_sessionGetDownloadDir(s));
     tr_variantDictAddStr(d, TR_KEY_default_trackers, s->defaultTrackersStr());
     tr_variantDictAddInt(d, TR_KEY_download_queue_size, s->queueSize(TR_DOWN));
@@ -700,7 +757,7 @@ void tr_session::initImpl(init_data& data)
 
     if (this->allowsLPD())
     {
-        tr_lpdInit(this, &this->bind_ipv4.addr_);
+        this->lpd_ = tr_lpd::create(lpd_mediator_, timerMaker(), eventBase());
     }
 
     tr_utpInit(this);
@@ -771,6 +828,11 @@ void tr_session::setImpl(init_data& data)
     if (tr_variantDictFindBool(settings, TR_KEY_dht_enabled, &boolVal))
     {
         tr_sessionSetDHTEnabled(this, boolVal);
+    }
+
+    if (tr_variantDictFindBool(settings, TR_KEY_tcp_enabled, &boolVal))
+    {
+        is_tcp_enabled_ = boolVal;
     }
 
     if (tr_variantDictFindBool(settings, TR_KEY_utp_enabled, &boolVal))
@@ -1200,7 +1262,12 @@ static void peerPortChanged(tr_session* const session)
     TR_ASSERT(session != nullptr);
 
     close_incoming_peer_port(session);
-    open_incoming_peer_port(session);
+
+    if (session->allowsTCP())
+    {
+        open_incoming_peer_port(session);
+    }
+
     tr_sharedPortChanged(*session);
 
     for (auto* const tor : session->torrents())
@@ -1743,10 +1810,7 @@ void tr_session::closeImplStart()
 {
     is_closing_ = true;
 
-    if (this->allowsLPD())
-    {
-        tr_lpdUninit(this);
-    }
+    lpd_.reset();
 
     tr_dhtUninit(this);
 
@@ -2082,16 +2146,11 @@ void tr_sessionSetLPDEnabled(tr_session* session, bool enabled)
         session,
         [session, enabled]()
         {
-            if (session->allowsLPD())
-            {
-                tr_lpdUninit(session);
-            }
-
+            session->lpd_.reset();
             session->is_lpd_enabled_ = enabled;
-
-            if (session->allowsLPD())
+            if (enabled)
             {
-                tr_lpdInit(session, &session->bind_ipv4.addr_);
+                session->lpd_ = tr_lpd::create(session->lpd_mediator_, session->timerMaker(), session->eventBase());
             }
         });
 }
@@ -2337,7 +2396,7 @@ size_t tr_blocklistSetContent(tr_session* session, char const* content_filename)
     auto const it = std::find_if(
         std::begin(src),
         std::end(src),
-        [&name](auto const& blocklist) { return tr_strvEndsWith(blocklist->getFilename(), name); });
+        [&name](auto const& blocklist) { return tr_strvEndsWith(blocklist->filename(), name); });
 
     BlocklistFile* b = nullptr;
     if (it == std::end(src))

@@ -64,17 +64,9 @@ enum tr_sys_file_open_flags_t
     TR_SYS_FILE_READ = (1 << 0),
     TR_SYS_FILE_WRITE = (1 << 1),
     TR_SYS_FILE_CREATE = (1 << 2),
-    TR_SYS_FILE_CREATE_NEW = (1 << 3),
-    TR_SYS_FILE_APPEND = (1 << 4),
-    TR_SYS_FILE_TRUNCATE = (1 << 5),
-    TR_SYS_FILE_SEQUENTIAL = (1 << 6)
-};
-
-enum tr_seek_origin_t
-{
-    TR_SEEK_SET,
-    TR_SEEK_CUR,
-    TR_SEEK_END
+    TR_SYS_FILE_APPEND = (1 << 3),
+    TR_SYS_FILE_TRUNCATE = (1 << 4),
+    TR_SYS_FILE_SEQUENTIAL = (1 << 5)
 };
 
 enum tr_sys_file_lock_flags_t
@@ -382,26 +374,6 @@ bool tr_sys_file_close(tr_sys_file_t handle, struct tr_error** error = nullptr);
 [[nodiscard]] std::optional<tr_sys_path_info> tr_sys_file_get_info(tr_sys_file_t handle, struct tr_error** error = nullptr);
 
 /**
- * @brief Portability wrapper for `lseek()`.
- *
- * @param[in]  handle     Valid file descriptor.
- * @param[in]  offset     Relative file offset in bytes to seek to.
- * @param[in]  origin     Offset origin.
- * @param[out] new_offset New offset in bytes from beginning of file. Optional,
- *                        pass `nullptr` if you are not interested.
- * @param[out] error      Pointer to error object. Optional, pass `nullptr` if
- *                        you are not interested in error details.
- *
- * @return `True` on success, `false` otherwise (with `error` set accordingly).
- */
-bool tr_sys_file_seek(
-    tr_sys_file_t handle,
-    int64_t offset,
-    tr_seek_origin_t origin,
-    uint64_t* new_offset,
-    struct tr_error** error = nullptr);
-
-/**
  * @brief Portability wrapper for `read()`.
  *
  * @param[in]  handle     Valid file descriptor.
@@ -542,32 +514,6 @@ bool tr_sys_file_advise(
 bool tr_sys_file_preallocate(tr_sys_file_t handle, uint64_t size, int flags, struct tr_error** error = nullptr);
 
 /**
- * @brief Portability wrapper for `mmap()` for files.
- *
- * @param[in]  handle Valid file descriptor.
- * @param[in]  offset Offset in file to map from.
- * @param[in]  size   Number of bytes to map.
- * @param[out] error  Pointer to error object. Optional, pass `nullptr` if you
- *                    are not interested in error details.
- *
- * @return Pointer to mapped file data on success, `nullptr` otherwise (with
- *         `error` set accordingly).
- */
-void* tr_sys_file_map_for_reading(tr_sys_file_t handle, uint64_t offset, uint64_t size, struct tr_error** error = nullptr);
-
-/**
- * @brief Portability wrapper for `munmap()` for files.
- *
- * @param[in]  address Pointer to mapped file data.
- * @param[in]  size    Size of mapped data in bytes.
- * @param[out] error   Pointer to error object. Optional, pass `nullptr` if you
- *                     are not interested in error details.
- *
- * @return `True` on success, `false` otherwise (with `error` set accordingly).
- */
-bool tr_sys_file_unmap(void const* address, uint64_t size, struct tr_error** error = nullptr);
-
-/**
  * @brief Portability wrapper for `flock()`.
  *
  * Don't try to upgrade or downgrade the lock unless you know what you are
@@ -583,29 +529,6 @@ bool tr_sys_file_unmap(void const* address, uint64_t size, struct tr_error** err
 bool tr_sys_file_lock(tr_sys_file_t handle, int operation, struct tr_error** error = nullptr);
 
 /* File-related wrappers (utility) */
-
-/**
- * @brief Portability wrapper for `fgets()`, removing EOL internally.
- *
- * Special care should be taken when reading from one of standard input streams
- * (@ref tr_std_sys_file_t) since no UTF-8 conversion is currently being made.
- *
- * Reading from other streams (files, pipes) also leaves data untouched, so it
- * should already be in UTF-8 encoding, or whichever else you expect.
- *
- * @param[in]  handle      Valid file descriptor.
- * @param[out] buffer      Buffer to store read zero-terminated string to.
- * @param[in]  buffer_size Buffer size in bytes, taking '\0' character into
- *                         account.
- * @param[out] error       Pointer to error object. Optional, pass `nullptr` if
- *                         you are not interested in error details.
- *
- * @return `True` on success, `false` otherwise (with `error` set accordingly).
- *         Note that `false` will also be returned in case of end of file; if
- *         you need to distinguish the two, check if `error` is `nullptr`
- *         afterwards.
- */
-bool tr_sys_file_read_line(tr_sys_file_t handle, char* buffer, size_t buffer_size, struct tr_error** error = nullptr);
 
 /**
  * @brief Portability wrapper for `fputs()`, appending EOL internally.

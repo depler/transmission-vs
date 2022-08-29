@@ -91,7 +91,9 @@ static void tr_variant_string_set_quark(struct tr_variant_string* str, tr_quark 
     tr_variant_string_clear(str);
 
     str->type = TR_STRING_TYPE_QUARK;
-    str->str.str = tr_quark_get_string(quark, &str->len);
+    auto const sv = tr_quark_get_string_view(quark);
+    str->str.str = std::data(sv);
+    str->len = std::size(sv);
 }
 
 static void tr_variant_string_set_string_view(struct tr_variant_string* str, std::string_view in)
@@ -189,15 +191,20 @@ tr_variant* tr_variantListChild(tr_variant* list, size_t pos)
 
 bool tr_variantListRemove(tr_variant* list, size_t pos)
 {
-    if (tr_variantIsList(list) && pos < list->val.l.count)
+    if (!tr_variantIsList(list) && pos < list->val.l.count)
     {
-        tr_variantClear(&list->val.l.vals[pos]);
-        tr_removeElementFromArray(list->val.l.vals, pos, sizeof(tr_variant), list->val.l.count);
-        --list->val.l.count;
-        return true;
+        return false;
     }
 
-    return false;
+    auto& vals = list->val.l.vals;
+    auto& count = list->val.l.count;
+
+    tr_variantClear(&vals[pos]);
+    std::move(vals + pos + 1, vals + count, vals + pos);
+    --count;
+    vals[count] = {};
+
+    return true;
 }
 
 bool tr_variantGetInt(tr_variant const* v, int64_t* setme)
@@ -725,7 +732,7 @@ protected:
         sortbuf.resize(n);
         for (size_t i = 0; i < n; ++i)
         {
-            sortbuf[i] = { tr_quark_get_string(children[i].key), i };
+            sortbuf[i] = { tr_quark_get_string_view(children[i].key), i };
         }
 
         std::sort(std::begin(sortbuf), std::end(sortbuf), [](ByKey const& a, ByKey const& b) { return a.key < b.key; });
@@ -1079,7 +1086,7 @@ void tr_variantMergeDicts(tr_variant* target, tr_variant const* source)
             }
             else
             {
-                tr_logAddDebug(fmt::format("tr_variantMergeDicts skipping '{}'", tr_quark_get_string(key)));
+                tr_logAddDebug(fmt::format("tr_variantMergeDicts skipping '{}'", tr_quark_get_string_view(key)));
             }
         }
     }
