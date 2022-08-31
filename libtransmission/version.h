@@ -1,6 +1,6 @@
 #pragma once
 
-#define BUILD_DATE                "2022-08-23"
+#define BUILD_DATE                "2022-08-31"
 #define PEERID_PREFIX             "-TR4000-"
 #define USERAGENT_PREFIX          "4.00"
 #define SHORT_VERSION_STRING      "4.00"
