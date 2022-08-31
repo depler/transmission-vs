@@ -90,13 +90,6 @@ public:
     {
     }
 
-    tr_handshake_mediator_impl(tr_handshake_mediator_impl&&) = delete;
-    tr_handshake_mediator_impl(tr_handshake_mediator_impl const&) = delete;
-    tr_handshake_mediator_impl& operator=(tr_handshake_mediator_impl&&) = delete;
-    tr_handshake_mediator_impl& operator=(tr_handshake_mediator_impl const&) = delete;
-
-    virtual ~tr_handshake_mediator_impl() = default;
-
     [[nodiscard]] std::optional<torrent_info> torrentInfo(tr_sha1_digest_t const& info_hash) const override
     {
         return torrentInfo(session_.torrents().get(info_hash));
@@ -1118,7 +1111,7 @@ static struct peer_atom* ensureAtomExists(
     return tor->max_connected_peers;
 }
 
-static void createBitTorrentPeer(tr_torrent* tor, tr_peerIo* io, struct peer_atom* atom, tr_quark client)
+static void createBitTorrentPeer(tr_torrent* tor, std::shared_ptr<tr_peerIo> io, struct peer_atom* atom, tr_quark client)
 {
     TR_ASSERT(atom != nullptr);
     TR_ASSERT(tr_isTorrent(tor));
@@ -1126,7 +1119,7 @@ static void createBitTorrentPeer(tr_torrent* tor, tr_peerIo* io, struct peer_ato
 
     tr_swarm* swarm = tor->swarm;
 
-    auto* peer = tr_peerMsgsNew(tor, atom, io, peerCallbackFunc, swarm);
+    auto* peer = tr_peerMsgsNew(tor, atom, std::move(io), peerCallbackFunc, swarm);
     peer->client = client;
     atom->is_connected = true;
 
@@ -1232,10 +1225,8 @@ static bool on_handshake_done(tr_handshake_result const& result)
                 client = tr_quark_new(std::data(buf));
             }
 
-            /* this steals its refcount too, which is balanced by our unref in peerDelete() */
-            tr_peerIo* stolen = tr_handshakeStealIO(result.handshake);
-            stolen->setParent(&s->tor->bandwidth_);
-            createBitTorrentPeer(s->tor, stolen, atom, client);
+            result.io->setParent(&s->tor->bandwidth_);
+            createBitTorrentPeer(s->tor, result.io, atom, client);
 
             success = true;
         }
@@ -1262,12 +1253,12 @@ void tr_peerMgrAddIncoming(tr_peerMgr* manager, tr_address const* addr, tr_port 
     }
     else /* we don't have a connection to them yet... */
     {
-        auto mediator = std::make_shared<tr_handshake_mediator_impl>(*session);
-        tr_peerIo* const io = tr_peerIoNewIncoming(session, &session->top_bandwidth_, addr, port, tr_time(), socket);
-        tr_handshake* const handshake = tr_handshakeNew(mediator, io, session->encryptionMode(), on_handshake_done, manager);
-
-        tr_peerIoUnref(io); /* balanced by the implicit ref in tr_peerIoNewIncoming() */
-
+        auto* const handshake = tr_handshakeNew(
+            std::make_unique<tr_handshake_mediator_impl>(*session),
+            tr_peerIo::newIncoming(session, &session->top_bandwidth_, addr, port, tr_time(), socket),
+            session->encryptionMode(),
+            on_handshake_done,
+            manager);
         manager->incoming_handshakes.add(*addr, handshake);
     }
 }
@@ -2836,7 +2827,7 @@ void initiateConnection(tr_peerMgr* mgr, tr_swarm* s, peer_atom& atom)
 
     tr_logAddTraceSwarm(s, fmt::format("Starting an OUTGOING {} connection with {}", utp ? " µTP" : "TCP", atom.readable()));
 
-    tr_peerIo* const io = tr_peerIoNewOutgoing(
+    auto io = tr_peerIo::newOutgoing(
         mgr->session,
         &mgr->session->top_bandwidth_,
         &atom.addr,
@@ -2854,13 +2845,12 @@ void initiateConnection(tr_peerMgr* mgr, tr_swarm* s, peer_atom& atom)
     }
     else
     {
-        auto mediator = std::make_shared<tr_handshake_mediator_impl>(*mgr->session);
-        tr_handshake* handshake = tr_handshakeNew(mediator, io, mgr->session->encryptionMode(), on_handshake_done, mgr);
-
-        TR_ASSERT(io->torrentHash());
-
-        tr_peerIoUnref(io); /* balanced by the initial ref in tr_peerIoNewOutgoing() */
-
+        auto* const handshake = tr_handshakeNew(
+            std::make_unique<tr_handshake_mediator_impl>(*mgr->session),
+            std::move(io),
+            mgr->session->encryptionMode(),
+            on_handshake_done,
+            mgr);
         s->outgoing_handshakes.add(atom.addr, handshake);
     }
 

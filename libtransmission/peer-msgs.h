@@ -12,6 +12,7 @@
 #include <cstdint> // int8_t
 #include <cstddef> // size_t
 #include <ctime> // time_t
+#include <memory>
 #include <utility>
 
 #include "bitfield.h"
@@ -35,8 +36,6 @@ public:
         , have_{ tor->pieceCount() }
     {
     }
-
-    virtual ~tr_peerMsgs() override = default;
 
     [[nodiscard]] virtual bool is_peer_choked() const noexcept = 0;
     [[nodiscard]] virtual bool is_peer_interested() const noexcept = 0;
@@ -77,7 +76,7 @@ protected:
 tr_peerMsgs* tr_peerMsgsNew(
     tr_torrent* torrent,
     peer_atom* atom,
-    tr_peerIo* io,
+    std::shared_ptr<tr_peerIo> io,
     tr_peer_callback callback,
     void* callback_data);
 
