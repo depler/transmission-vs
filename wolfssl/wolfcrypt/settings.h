@@ -1,6 +1,6 @@
 /* settings.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -2139,25 +2139,26 @@ extern void uITRON4_free(void *p) ;
     #endif
 #endif
 #if defined(HAVE_FFDHE_8192)
-    #define MIN_FFDHE_FP_MAX_BITS 16384
+    #define MIN_FFDHE_BITS 8192
 #elif defined(HAVE_FFDHE_6144)
-    #define MIN_FFDHE_FP_MAX_BITS 12288
+    #define MIN_FFDHE_BITS 6144
 #elif defined(HAVE_FFDHE_4096)
-    #define MIN_FFDHE_FP_MAX_BITS 8192
+    #define MIN_FFDHE_BITS 4096
 #elif defined(HAVE_FFDHE_3072)
-    #define MIN_FFDHE_FP_MAX_BITS 6144
+    #define MIN_FFDHE_BITS 3072
 #elif defined(HAVE_FFDHE_2048)
-    #define MIN_FFDHE_FP_MAX_BITS 4096
+    #define MIN_FFDHE_BITS 2048
 #else
-    #define MIN_FFDHE_FP_MAX_BITS 0
+    #define MIN_FFDHE_BITS 0
 #endif
+#define MIN_FFDHE_FP_MAX_BITS   (MIN_FFDHE_BITS * 2)
 #if defined(HAVE_FFDHE) && defined(FP_MAX_BITS)
     #if MIN_FFDHE_FP_MAX_BITS > FP_MAX_BITS
         #error "FFDHE parameters are too large for FP_MAX_BIT as set"
     #endif
 #endif
 #if defined(HAVE_FFDHE) && defined(SP_INT_BITS)
-    #if MIN_FFDHE_FP_MAX_BITS > SP_INT_BITS * 2
+    #if MIN_FFDHE_BITS > SP_INT_BITS
         #error "FFDHE parameters are too large for SP_INT_BIT as set"
     #endif
 #endif
@@ -2166,16 +2167,18 @@ extern void uITRON4_free(void *p) ;
 #if defined(WOLFSSL_X86_64_BUILD) || defined(WOLFSSL_AARCH64_BUILD)
     #if defined(USE_FAST_MATH) && !defined(FP_MAX_BITS)
         #if MIN_FFDHE_FP_MAX_BITS <= 8192
-            #define FP_MAX_BITS 8192
+            #define FP_MAX_BITS     8192
         #else
-            #define FP_MAX_BITS MIN_FFDHE_FP_MAX_BITS
+            #define FP_MAX_BITS     MIN_FFDHE_FP_MAX_BITS
         #endif
     #endif
     #if defined(WOLFSSL_SP_MATH_ALL) && !defined(SP_INT_BITS)
-        #if MIN_FFDHE_FP_MAX_BITS <= 8192
-            #define SP_INT_BITS 4096
+        #ifdef WOLFSSL_MYSQL_COMPATIBLE
+            #define SP_INT_BITS     8192
+        #elif MIN_FFDHE_BITS <= 4096
+            #define SP_INT_BITS     4096
         #else
-            #define PS_INT_BITS MIN_FFDHE_FP_MAX_BITS / 2
+            #define SP_INT_BITS     MIN_FFDHE_BITS
         #endif
     #endif
 #endif
@@ -2396,8 +2399,8 @@ extern void uITRON4_free(void *p) ;
     #undef HAVE_GMTIME_R /* don't trust macro with windows */
 #endif /* WOLFSSL_MYSQL_COMPATIBLE */
 
-#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
- || defined(HAVE_LIGHTY)
+#if (defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) \
+ || defined(HAVE_LIGHTY)) && !defined(NO_TLS)
     #define OPENSSL_NO_ENGINE
     #ifndef OPENSSL_EXTRA
         #define OPENSSL_EXTRA
@@ -2573,8 +2576,7 @@ extern void uITRON4_free(void *p) ;
 
 #if defined(WOLFCRYPT_ONLY) && defined(NO_AES) && !defined(WOLFSSL_SHA384) && \
     !defined(WOLFSSL_SHA512) && defined(WC_NO_RNG) && \
-    (defined(WOLFSSL_SP_MATH) || defined(WOLFSSL_SP_MATH_ALL)) && \
-    defined(WOLFSSL_RSA_PUBLIC_ONLY)
+    !defined(WOLFSSL_SP_MATH) && !defined(WOLFSSL_SP_MATH_ALL)
     #undef  WOLFSSL_NO_FORCE_ZERO
     #define WOLFSSL_NO_FORCE_ZERO
 #endif
@@ -2603,6 +2605,11 @@ extern void uITRON4_free(void *p) ;
 
 #ifdef NO_WOLFSSL_SMALL_STACK
     #undef WOLFSSL_SMALL_STACK
+#endif
+
+#if defined(WOLFSSL_SMALL_STACK) && !defined(WOLFSSL_SMALL_STACK_STATIC) && \
+    !defined(NO_WOLFSSL_SMALL_STACK_STATIC)
+#define WOLFSSL_SMALL_STACK_STATIC
 #endif
 
 #ifdef WOLFSSL_SMALL_STACK_STATIC
@@ -2713,6 +2720,7 @@ extern void uITRON4_free(void *p) ;
 #ifdef HAVE_LIBOQS
 #define HAVE_PQC
 #define HAVE_FALCON
+#define HAVE_DILITHIUM
 #define HAVE_KYBER
 #endif
 
@@ -2765,6 +2773,10 @@ extern void uITRON4_free(void *p) ;
 #if defined(WOLFSSL_DTLS13) && (!defined(WOLFSSL_DTLS) || \
                                 !defined(WOLFSSL_TLS13))
 #error "DTLS v1.3 requires both WOLFSSL_TLS13 and WOLFSSL_DTLS"
+#endif
+
+#if defined(WOLFSSL_DTLS_CID) && !defined(WOLFSSL_DTLS13)
+#error "ConnectionID is supported for DTLSv1.3 only"
 #endif
 
 /* RSA Key Checking is disabled by default unless WOLFSSL_RSA_KEY_CHECK is

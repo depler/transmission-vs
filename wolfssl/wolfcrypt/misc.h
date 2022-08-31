@@ -1,6 +1,6 @@
 /* misc.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -126,6 +126,9 @@ WOLFSSL_LOCAL byte ctMaskNotEq(int a, int b);
 WOLFSSL_LOCAL byte ctMaskSel(byte m, byte a, byte b);
 WOLFSSL_LOCAL int  ctMaskSelInt(byte m, int a, int b);
 WOLFSSL_LOCAL byte ctSetLTE(int a, int b);
+WOLFSSL_LOCAL void ctMaskCopy(byte mask, byte* dst, byte* src, word16 size);
+WOLFSSL_LOCAL word32 MakeWordFromHash(const byte* hashID);
+WOLFSSL_LOCAL word32 HashObject(const byte* o, word32 len, int* error);
 
 #endif /* NO_INLINE */
 

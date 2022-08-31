@@ -1,6 +1,6 @@
 /* misc.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -544,6 +544,18 @@ WC_STATIC WC_INLINE byte ctSetLTE(int a, int b)
 {
     return (byte)(((word32)a - b - 1) >> 31);
 }
+
+/* Constant time - conditionally copy size bytes from src to dst if mask is set
+ */
+WC_STATIC WC_INLINE void ctMaskCopy(byte mask, byte* dst, byte* src,
+    word16 size)
+{
+    int i;
+    for (i = 0; i < size; ++i) {
+        dst[i] ^= (dst[i] ^ src[i]) & mask;
+    }
+}
+
 #endif
 
 #if defined(WOLFSSL_W64_WRAPPER)
@@ -789,6 +801,40 @@ WC_STATIC WC_INLINE byte w64LT(w64wrapper a, w64wrapper b)
 
 #endif /* WORD64_AVAILABLE && !WOLFSSL_W64_WRAPPER_TEST */
 #endif /* WOLFSSL_W64_WRAPPER */
+
+#if defined(HAVE_SESSION_TICKET) || !defined(NO_CERTS) || \
+    !defined(NO_SESSION_CACHE)
+/* Make a word from the front of random hash */
+WC_STATIC WC_INLINE word32 MakeWordFromHash(const byte* hashID)
+{
+    return ((word32)hashID[0] << 24) | ((word32)hashID[1] << 16) |
+           ((word32)hashID[2] <<  8) |  (word32)hashID[3];
+}
+#endif /* HAVE_SESSION_TICKET || !NO_CERTS || !NO_SESSION_CACHE */
+
+
+#if !defined(NO_SESSION_CACHE) || defined(HAVE_SESSION_TICKET)
+
+#include <wolfssl/wolfcrypt/hash.h>
+
+/* some session IDs aren't random after all, let's make them random */
+WC_STATIC WC_INLINE word32 HashObject(const byte* o, word32 len, int* error)
+{
+    byte digest[WC_MAX_DIGEST_SIZE];
+
+#ifndef NO_MD5
+    *error =  wc_Md5Hash(o, len, digest);
+#elif !defined(NO_SHA)
+    *error =  wc_ShaHash(o, len, digest);
+#elif !defined(NO_SHA256)
+    *error =  wc_Sha256Hash(o, len, digest);
+#else
+    #error "We need a digest to hash the session IDs"
+#endif
+
+    return *error == 0 ? MakeWordFromHash(digest) : 0; /* 0 on failure */
+}
+#endif /* !NO_SESSION_CACHE || HAVE_SESSION_TICKET */
 
 #undef WC_STATIC
 

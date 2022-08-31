@@ -1,6 +1,6 @@
 /* error.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -34,6 +34,7 @@
 #endif
 
 #ifndef NO_ERROR_STRINGS
+WOLFSSL_ABI
 const char* wc_GetErrorString(int error)
 {
     switch (error) {
@@ -566,6 +567,12 @@ const char* wc_GetErrorString(int error)
 
     case NO_VALID_DEVID:
         return "No valid device ID set";
+
+    case IO_FAILED_E:
+        return "Input/output failure";
+
+    case SYSLIB_FAILED_E:
+        return "System/library call failed";
 
     default:
         return "unknown error number";

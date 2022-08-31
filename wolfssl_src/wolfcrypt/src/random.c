@@ -1,6 +1,6 @@
 /* random.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -70,6 +70,7 @@ int wc_InitRng_ex(WC_RNG* rng, void* heap, int devId)
     return InitRng_fips(rng);
 }
 
+WOLFSSL_ABI
 int wc_InitRng(WC_RNG* rng)
 {
     return InitRng_fips(rng);
@@ -951,7 +952,7 @@ void wc_rng_free(WC_RNG* rng)
     }
 }
 
-
+WOLFSSL_ABI
 int wc_InitRng(WC_RNG* rng)
 {
     return _InitRng(rng, NULL, 0, NULL, INVALID_DEVID);

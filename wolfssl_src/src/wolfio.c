@@ -1,6 +1,6 @@
 /* wolfio.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -372,6 +372,20 @@ static int sockAddrEqual(
     return 0;
 }
 
+static int isDGramSock(int sfd)
+{
+    int type = 0;
+    XSOCKLENT length = sizeof(int); /* optvalue 'type' is of size int */
+
+    if (getsockopt(sfd, SOL_SOCKET, SO_TYPE, &type, &length) == 0 &&
+            type != SOCK_DGRAM) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
 /* The receive embedded callback
  *  return : nb bytes read, or error
  */
@@ -470,6 +484,25 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
     recvd = (int)DTLS_RECVFROM_FUNCTION(sd, buf, sz, ssl->rflags,
                       (SOCKADDR*)peer, peer != NULL ? &peerSz : NULL);
 
+    /* From the RECV(2) man page
+     * The returned address is truncated if the buffer provided is too small; in
+     * this case, addrlen will return a value greater than was supplied to the
+     * call.
+     */
+    if (dtlsCtx->connected) {
+        /* No need to sanitize the value of peerSz */
+    }
+    else if (dtlsCtx->userSet) {
+        /* Truncate peer size */
+        if (peerSz > sizeof(lclPeer))
+            peerSz = sizeof(lclPeer);
+    }
+    else {
+        /* Truncate peer size */
+        if (peerSz > dtlsCtx->peer.bufSz)
+            peerSz = dtlsCtx->peer.bufSz;
+    }
+
     recvd = TranslateReturnCode(recvd, sd);
 
     if (recvd < 0) {
@@ -478,6 +511,16 @@ int EmbedReceiveFrom(WOLFSSL *ssl, char *buf, int sz, void *ctx)
         if (recvd == WOLFSSL_CBIO_ERR_WANT_READ &&
             !wolfSSL_dtls_get_using_nonblock(ssl)) {
             recvd = WOLFSSL_CBIO_ERR_TIMEOUT;
+        }
+        return recvd;
+    }
+    else if (recvd == 0) {
+        if (!isDGramSock(sd)) {
+            /* Closed TCP connection */
+            recvd = WOLFSSL_CBIO_ERR_CONN_CLOSE;
+        }
+        else {
+            WOLFSSL_MSG("Ignoring 0-length datagram");
         }
         return recvd;
     }
@@ -516,13 +559,10 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     int sent;
     const SOCKADDR_S* peer = NULL;
     XSOCKLENT peerSz = 0;
-    int type;
-    XSOCKLENT length = sizeof(int); /* optvalue 'type' is of size int */
 
     WOLFSSL_ENTER("EmbedSendTo()");
 
-    if (getsockopt(sd, SOL_SOCKET, SO_TYPE, &type, &length) == 0 &&
-            type != SOCK_DGRAM) {
+    if (!isDGramSock(sd)) {
         /* Probably a TCP socket. peer and peerSz MUST be NULL and 0 */
     }
     else if (!dtlsCtx->connected) {

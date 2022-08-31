@@ -1,6 +1,6 @@
 /* asn_public.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -72,6 +72,10 @@ This library defines the interface APIs for X509 certificates.
     typedef struct falcon_key falcon_key;
     #define WC_FALCONKEY_TYPE_DEFINED
 #endif
+#ifndef WC_DILITHIUMKEY_TYPE_DEFINED
+    typedef struct dilithium_key dilithium_key;
+    #define WC_DILITHIUMKEY_TYPE_DEFINED
+#endif
 
 enum Ecc_Sum {
     ECC_SECP112R1_OID = 182,
@@ -137,6 +141,12 @@ enum CertType {
     X942_PARAM_TYPE,
     FALCON_LEVEL1_TYPE,
     FALCON_LEVEL5_TYPE,
+    DILITHIUM_LEVEL2_TYPE,
+    DILITHIUM_LEVEL3_TYPE,
+    DILITHIUM_LEVEL5_TYPE,
+    DILITHIUM_AES_LEVEL2_TYPE,
+    DILITHIUM_AES_LEVEL3_TYPE,
+    DILITHIUM_AES_LEVEL5_TYPE,
 };
 
 
@@ -167,11 +177,20 @@ enum Ctc_SigType {
     CTC_SHA3_384wRSA = 429,
     CTC_SHA3_512wRSA = 430,
 
+    CTC_RSASSAPSS    = 654,
+
     CTC_ED25519      = 256,
     CTC_ED448        = 257,
 
     CTC_FALCON_LEVEL1 = 268,
-    CTC_FALCON_LEVEL5 = 271
+    CTC_FALCON_LEVEL5 = 271,
+
+    CTC_DILITHIUM_LEVEL2     = 213,
+    CTC_DILITHIUM_LEVEL3     = 216,
+    CTC_DILITHIUM_LEVEL5     = 220,
+    CTC_DILITHIUM_AES_LEVEL2 = 217,
+    CTC_DILITHIUM_AES_LEVEL3 = 221,
+    CTC_DILITHIUM_AES_LEVEL5 = 224,
 };
 
 enum Ctc_Encoding {
@@ -225,7 +244,12 @@ typedef struct WOLFSSL_ASN1_TIME {
 
 enum {
     IV_SZ   = 32,                   /* max iv sz */
+#ifdef OPENSSL_ALL
+    NAME_SZ = 160,                  /* larger max one line, allows for longer
+                                       encryption password support */
+#else
     NAME_SZ = 80,                   /* max one line */
+#endif
 
     PEM_PASS_READ  = 0,
     PEM_PASS_WRITE = 1,
@@ -337,6 +361,16 @@ typedef struct CertName {
     char localityEnc;
     char sur[CTC_NAME_SIZE];
     char surEnc;
+#ifdef WOLFSSL_CERT_NAME_ALL
+    char givenName[CTC_NAME_SIZE];
+    char givenNameEnc;
+    char initials[CTC_NAME_SIZE];
+    char initialsEnc;
+    char dnQualifier[CTC_NAME_SIZE];
+    char dnQualifierEnc;
+    char dnName[CTC_NAME_SIZE];
+    char dnNameEnc;
+#endif /* WOLFSSL_CERT_NAME_ALL */
     char org[CTC_NAME_SIZE];
     char orgEnc;
     char unit[CTC_NAME_SIZE];
@@ -384,6 +418,8 @@ typedef struct Cert {
     int      selfSigned;                /* self signed flag */
     CertName subject;                   /* subject info */
     int      isCA;                      /* is this going to be a CA */
+    byte     pathLen;                   /* max depth of valid certification
+                                         * paths that include this cert */
     /* internal use only */
     int      bodySz;                    /* pre sign total size */
     int      keyType;                   /* public key type of subject */
@@ -433,6 +469,7 @@ typedef struct Cert {
 #endif
 #ifdef WOLFSSL_CERT_REQ
     char     challengePw[CTC_NAME_SIZE];
+    char     unstructuredName[CTC_NAME_SIZE];
     int      challengePwPrintableString; /* encode as PrintableString */
 #endif
 #ifdef WOLFSSL_CUSTOM_OID
@@ -447,6 +484,10 @@ typedef struct Cert {
     byte*   der;              /* Pointer to buffer of current DecodedCert cache */
     void*   heap;             /* heap hint */
     byte    basicConstSet:1;  /* Indicator for when Basic Constaint is set */
+    byte    pathLenSet:1;     /* Indicator for when path length is set */
+#ifdef WOLFSSL_ALT_NAMES
+    byte    altNamesCrit:1;   /* Indicator of criticality of SAN extension */
+#endif
 } Cert;
 
 
@@ -461,15 +502,19 @@ typedef struct Cert {
    isCA       = 0 (false)
    keyType    = RSA_KEY (default)
 */
-WOLFSSL_API int wc_InitCert(Cert* cert);
+WOLFSSL_ABI WOLFSSL_API int   wc_InitCert(Cert* cert);
+WOLFSSL_ABI WOLFSSL_API Cert* wc_CertNew(void* heap);
+WOLFSSL_ABI WOLFSSL_API void  wc_CertFree(Cert* cert);
 WOLFSSL_API int wc_InitCert_ex(Cert* cert, void* heap, int devId);
 WOLFSSL_API int wc_MakeCert_ex(Cert* cert, byte* derBuffer, word32 derSz,
                                int keyType, void* key, WC_RNG* rng);
+WOLFSSL_ABI
 WOLFSSL_API int wc_MakeCert(Cert* cert, byte* derBuffer, word32 derSz,
                             RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng);
 #ifdef WOLFSSL_CERT_REQ
     WOLFSSL_API int wc_MakeCertReq_ex(Cert* cert, byte* derBuffer, word32 derSz,
                                       int keyType, void* key);
+    WOLFSSL_ABI
     WOLFSSL_API int wc_MakeCertReq(Cert* cert, byte* derBuffer, word32 derSz,
                    RsaKey* rsaKey, ecc_key* eccKey);
 #endif
@@ -478,21 +523,26 @@ WOLFSSL_API int wc_SignCert_ex(int requestSz, int sType, byte* buf,
                                WC_RNG* rng);
 WOLFSSL_API int wc_SignCert(int requestSz, int sType, byte* buf, word32 buffSz,
                             RsaKey* rsaKey, ecc_key* eccKey, WC_RNG* rng);
+WOLFSSL_ABI
 WOLFSSL_API int wc_MakeSelfCert(Cert* cert, byte* buf, word32 buffSz,
                                 RsaKey* key, WC_RNG* rng);
-WOLFSSL_API int wc_SetIssuer(Cert* cert, const char* issuerFile);
-WOLFSSL_API int wc_SetSubject(Cert* cert, const char* subjectFile);
+WOLFSSL_ABI WOLFSSL_API int wc_SetIssuer(Cert* cert, const char* issuerFile);
+WOLFSSL_ABI WOLFSSL_API int wc_SetSubject(Cert* cert, const char* subjectFile);
 #ifdef WOLFSSL_ALT_NAMES
-    WOLFSSL_API int wc_SetAltNames(Cert* cert, const char* file);
+    WOLFSSL_ABI WOLFSSL_API int wc_SetAltNames(Cert* cert, const char* file);
 #endif
 
 #ifdef WOLFSSL_CERT_GEN_CACHE
-WOLFSSL_API void wc_SetCert_Free(Cert* cert);
+WOLFSSL_ABI WOLFSSL_API void wc_SetCert_Free(Cert* cert);
 #endif
 
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetIssuerBuffer(Cert* cert, const byte* der, int derSz);
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetSubjectBuffer(Cert* cert, const byte* der, int derSz);
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetAltNamesBuffer(Cert* cert, const byte* der, int derSz);
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetDatesBuffer(Cert* cert, const byte* der, int derSz);
 
 #ifndef NO_ASN_TIME
@@ -512,8 +562,10 @@ WOLFSSL_API int wc_SetSubjectKeyIdFromPublicKey_ex(Cert *cert, int keyType,
 WOLFSSL_API int wc_SetSubjectKeyIdFromPublicKey(Cert *cert, RsaKey *rsakey,
                                                 ecc_key *eckey);
 WOLFSSL_API int wc_SetSubjectKeyId(Cert *cert, const char* file);
-WOLFSSL_API int wc_GetSubjectRaw(byte **subjectRaw, Cert *cert);
+WOLFSSL_ABI WOLFSSL_API int wc_GetSubjectRaw(byte **subjectRaw, Cert *cert);
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetSubjectRaw(Cert* cert, const byte* der, int derSz);
+WOLFSSL_ABI
 WOLFSSL_API int wc_SetIssuerRaw(Cert* cert, const byte* der, int derSz);
 
 /* Set the KeyUsage.
@@ -596,6 +648,7 @@ WOLFSSL_API void wc_FreeDer(DerBuffer** pDer);
 #endif /* WOLFSSL_CERT_GEN */
 
 #ifdef WOLFSSL_DER_TO_PEM
+    WOLFSSL_ABI
     WOLFSSL_API int wc_DerToPem(const byte* der, word32 derSz, byte* output,
                                 word32 outputSz, int type);
     WOLFSSL_API int wc_DerToPemEx(const byte* der, word32 derSz, byte* output,
@@ -641,8 +694,10 @@ WOLFSSL_API int wc_DhPrivKeyToDer(DhKey* key, byte* out, word32* outSz);
 
 #ifdef HAVE_ECC
     /* private key helpers */
+    WOLFSSL_ABI
     WOLFSSL_API int wc_EccPrivateKeyDecode(const byte* input, word32* inOutIdx,
                                            ecc_key* key, word32 inSz);
+    WOLFSSL_ABI
     WOLFSSL_API int wc_EccKeyToDer(ecc_key* key, byte* output, word32 inLen);
     WOLFSSL_API int wc_EccPrivateKeyToDer(ecc_key* key, byte* output,
                                           word32 inLen);
@@ -653,9 +708,10 @@ WOLFSSL_API int wc_DhPrivKeyToDer(DhKey* key, byte* out, word32* outSz);
                                      word32* outLen);
 
     /* public key helper */
+    WOLFSSL_ABI
     WOLFSSL_API int wc_EccPublicKeyDecode(const byte* input, word32* inOutIdx,
                           ecc_key* key, word32 inSz);
-    WOLFSSL_API int wc_EccPublicKeyToDer(ecc_key* key, byte* output,
+    WOLFSSL_ABI WOLFSSL_API int wc_EccPublicKeyToDer(ecc_key* key, byte* output,
                                          word32 inLen, int with_AlgCurve);
     WOLFSSL_API int wc_EccPublicKeyToDer_ex(ecc_key* key, byte* output,
                                          word32 inLen, int with_AlgCurve,
@@ -669,7 +725,7 @@ WOLFSSL_API int wc_DhPrivKeyToDer(DhKey* key, byte* out, word32* outSz);
      (defined(HAVE_CURVE25519) && defined(HAVE_CURVE25519_KEY_EXPORT)) || \
      (defined(HAVE_ED448)      && defined(HAVE_ED448_KEY_EXPORT)) || \
      (defined(HAVE_CURVE448)   && defined(HAVE_CURVE448_KEY_EXPORT)) || \
-     (defined(HAVE_PQC) && defined(HAVE_FALCON)))
+     (defined(HAVE_PQC) && (defined(HAVE_FALCON) || defined(HAVE_DILITHIUM))))
     #define WC_ENABLE_ASYM_KEY_EXPORT
 #endif
 
@@ -732,14 +788,28 @@ WOLFSSL_API int wc_Ed448PublicKeyToDer(
 
 #ifdef HAVE_PQC
 WOLFSSL_API int wc_Falcon_PrivateKeyDecode(const byte* input, word32* inOutIdx,
-                                     falcon_key* key, word32 inSz);
+                                           falcon_key* key, word32 inSz);
 WOLFSSL_API int wc_Falcon_PublicKeyDecode(const byte* input, word32* inOutIdx,
-                                    falcon_key* key, word32 inSz);
-WOLFSSL_API int wc_Falcon_KeyToDer(falcon_key* key, byte* output, word32 inLen);
+                                          falcon_key* key, word32 inSz);
+WOLFSSL_API int wc_Falcon_KeyToDer(falcon_key* key, byte* output,
+                                   word32 inLen);
 WOLFSSL_API int wc_Falcon_PrivateKeyToDer(falcon_key* key, byte* output,
                                           word32 inLen);
 WOLFSSL_API int wc_Falcon_PublicKeyToDer(falcon_key* key, byte* output,
                                          word32 inLen, int withAlg);
+
+WOLFSSL_API int wc_Dilithium_PrivateKeyDecode(const byte* input,
+                                              word32* inOutIdx,
+                                              dilithium_key* key, word32 inSz);
+WOLFSSL_API int wc_Dilithium_PublicKeyDecode(const byte* input,
+                                             word32* inOutIdx,
+                                             dilithium_key* key, word32 inSz);
+WOLFSSL_API int wc_Dilithium_KeyToDer(dilithium_key* key, byte* output,
+                                      word32 inLen);
+WOLFSSL_API int wc_Dilithium_PrivateKeyToDer(dilithium_key* key, byte* output,
+                                             word32 inLen);
+WOLFSSL_API int wc_Dilithium_PublicKeyToDer(dilithium_key* key, byte* output,
+                                            word32 inLen, int withAlg);
 #endif /* HAVE_PQC */
 
 #ifdef HAVE_CURVE448

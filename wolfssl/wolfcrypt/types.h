@@ -1,6 +1,6 @@
 /* types.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -38,9 +38,6 @@ decouple library dependencies with standard string, memory and so on.
         extern "C" {
     #endif
 
-
-    #define WOLFSSL_ABI
-            /* Tag for all the APIs that are a part of the fixed ABI. */
 
     /*
      * This struct is used multiple time by other structs and
@@ -226,7 +223,7 @@ typedef struct w64wrapper {
 #endif /* WORD64_AVAILABLE && WOLFSSL_W64_WRAPPER_TEST */
 } w64wrapper;
 
-#ifdef WC_PTR_TYPE /* Allow user suppied type */
+#ifdef WC_PTR_TYPE /* Allow user supplied type */
     typedef WC_PTR_TYPE wc_ptr_t;
 #elif defined(HAVE_UINTPTR_T)
     #include <stdint.h>
@@ -714,7 +711,7 @@ typedef struct w64wrapper {
                     /* In cases when truncation is expected the caller needs*/
                     /* to check the return value from the function so that  */
                     /* compiler doesn't complain.                           */
-                    /* xtensa-esp32-elf v8.2.0 warns trancation at          */
+                    /* xtensa-esp32-elf v8.2.0 warns truncation at          */
                     /* GetAsnTimeString()                                   */
                     static WC_INLINE
                     int _xsnprintf_(char *s, size_t n, const char *format, ...)
@@ -947,6 +944,7 @@ typedef struct w64wrapper {
         DYNAMIC_TYPE_CMAC         = 94,
         DYNAMIC_TYPE_FALCON       = 95,
         DYNAMIC_TYPE_SESSION      = 96,
+        DYNAMIC_TYPE_DILITHIUM    = 97,
         DYNAMIC_TYPE_SNIFFER_SERVER     = 1000,
         DYNAMIC_TYPE_SNIFFER_SESSION    = 1001,
         DYNAMIC_TYPE_SNIFFER_PB         = 1002,

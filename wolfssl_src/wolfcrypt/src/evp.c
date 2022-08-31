@@ -1,6 +1,6 @@
 /* evp.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -243,6 +243,9 @@ int wolfSSL_EVP_Cipher_key_length(const WOLFSSL_EVP_CIPHER* c)
       case DES_EDE3_CBC_TYPE: return 24;
       case DES_ECB_TYPE:      return 8;
       case DES_EDE3_ECB_TYPE: return 24;
+  #endif
+  #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+      case CHACHA20_POLY1305_TYPE: return 32;
   #endif
       default:
           return 0;
@@ -542,17 +545,14 @@ static int evpCipherBlock(WOLFSSL_EVP_CIPHER_CTX *ctx,
         break;
     #endif
         default:
-            return WOLFSSL_FAILURE;
+            ret = WOLFSSL_FAILURE;
     }
-
-    if (ret != 0)
-        return WOLFSSL_FAILURE; /* failure */
 
     (void)in;
     (void)inl;
     (void)out;
 
-    return WOLFSSL_SUCCESS; /* success */
+    return (ret == 0) ? WOLFSSL_SUCCESS : WOLFSSL_FAILURE;
 }
 
 #if defined(HAVE_AESGCM)
@@ -687,6 +687,7 @@ int wolfSSL_EVP_CipherUpdate(WOLFSSL_EVP_CIPHER_CTX *ctx,
                     return WOLFSSL_FAILURE;
                 }
                 else {
+                    *outl = inl;
                     return WOLFSSL_SUCCESS;
                 }
             }
@@ -697,6 +698,7 @@ int wolfSSL_EVP_CipherUpdate(WOLFSSL_EVP_CIPHER_CTX *ctx,
                     return WOLFSSL_FAILURE;
                 }
                 else {
+                    *outl = inl;
                     return WOLFSSL_SUCCESS;
                 }
             }
@@ -946,6 +948,7 @@ int wolfSSL_EVP_CipherFinal(WOLFSSL_EVP_CIPHER_CTX *ctx, unsigned char *out,
                 return WOLFSSL_FAILURE;
             }
             else {
+                *outl = 0;
                 return WOLFSSL_SUCCESS;
             }
 #endif
@@ -1289,6 +1292,12 @@ static unsigned int cipherType(const WOLFSSL_EVP_CIPHER *cipher)
     else if (EVP_CIPHER_TYPE_MATCHES(cipher, EVP_ARC4))
       return ARC4_TYPE;
 #endif
+
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+    else if (EVP_CIPHER_TYPE_MATCHES(cipher, EVP_CHACHA20_POLY1305))
+        return CHACHA20_POLY1305_TYPE;
+#endif
+
       else return 0;
 }
 
@@ -1357,6 +1366,11 @@ int wolfSSL_EVP_CIPHER_block_size(const WOLFSSL_EVP_CIPHER *cipher)
       case DES_ECB_TYPE: return 8;
       case DES_EDE3_ECB_TYPE: return 8;
 #endif
+
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+      case CHACHA20_POLY1305_TYPE:
+          return 1;
+#endif
       default:
           return 0;
       }
@@ -1424,6 +1438,11 @@ unsigned long WOLFSSL_CIPHER_mode(const WOLFSSL_EVP_CIPHER *cipher)
     #ifndef NO_RC4
         case ARC4_TYPE:
             return EVP_CIPH_STREAM_CIPHER;
+    #endif
+    #if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+        case CHACHA20_POLY1305_TYPE:
+            return WOLFSSL_EVP_CIPH_STREAM_CIPHER |
+                    WOLFSSL_EVP_CIPH_FLAG_AEAD_CIPHER;
     #endif
         default:
             return 0;
@@ -3532,6 +3551,7 @@ static int wolfssl_evp_digest_pk_final(WOLFSSL_EVP_MD_CTX *ctx,
     }
     else {
         WOLFSSL_EVP_MD_CTX ctxCopy;
+        wolfSSL_EVP_MD_CTX_init(&ctxCopy);
 
         if (wolfSSL_EVP_MD_CTX_copy_ex(&ctxCopy, ctx) != WOLFSSL_SUCCESS)
             return WOLFSSL_FAILURE;
@@ -4152,6 +4172,10 @@ static const struct cipher{
     {ARC4_TYPE, EVP_ARC4, NID_undef},
 #endif
 
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+    {CHACHA20_POLY1305_TYPE, EVP_CHACHA20_POLY1305, NID_chacha20_poly1305},
+#endif
+
     { 0, NULL, 0}
 };
 
@@ -4248,6 +4272,9 @@ const WOLFSSL_EVP_CIPHER *wolfSSL_EVP_get_cipherbyname(const char *name)
 #endif
 #ifndef NO_RC4
         {EVP_ARC4, "RC4"},
+#endif
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+        {EVP_CHACHA20_POLY1305, "chacha20-poly1305"},
 #endif
         { NULL, NULL}
     };
@@ -4361,6 +4388,11 @@ const WOLFSSL_EVP_CIPHER *wolfSSL_EVP_get_cipherbynid(int id)
             return wolfSSL_EVP_des_ede3_ecb();
 #endif
 #endif /*NO_DES3*/
+
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+        case NID_chacha20_poly1305:
+            return wolfSSL_EVP_chacha20_poly1305();
+#endif
 
         default:
             WOLFSSL_MSG("Bad cipher id value");
@@ -4851,6 +4883,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
     {
         if ((out == NULL) || (in == NULL)) return WOLFSSL_FAILURE;
         WOLFSSL_ENTER("EVP_CIPHER_MD_CTX_copy_ex");
+        wolfSSL_EVP_MD_CTX_cleanup(out);
         XMEMCPY(out, in, sizeof(WOLFSSL_EVP_MD_CTX));
         if (in->pctx != NULL) {
             out->pctx = wolfSSL_EVP_PKEY_CTX_new(in->pctx->pkey, NULL);
@@ -5686,7 +5719,7 @@ int wolfSSL_EVP_MD_type(const WOLFSSL_EVP_MD* type)
 
 #if defined(HAVE_AES_CBC) || defined(WOLFSSL_AES_COUNTER) || \
     defined(HAVE_AES_ECB) || defined(WOLFSSL_AES_CFB) || \
-    defined(WOLFSSL_AES_OFB)
+    defined(WOLFSSL_AES_OFB) || defined(WOLFSSL_AES_DIRECT)
     #define AES_SET_KEY
 #endif
 
@@ -8355,6 +8388,11 @@ int wolfSSL_EVP_CIPHER_CTX_iv_length(const WOLFSSL_EVP_CIPHER_CTX* ctx)
             WOLFSSL_MSG("AES XTS");
             return AES_BLOCK_SIZE;
 #endif /* WOLFSSL_AES_XTS */
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+        case CHACHA20_POLY1305_TYPE:
+            WOLFSSL_MSG("CHACHA20 POLY1305");
+            return CHACHA20_POLY1305_AEAD_IV_SIZE;
+#endif /* HAVE_CHACHA HAVE_POLY1305 */
 
         case NULL_CIPHER_TYPE :
             WOLFSSL_MSG("NULL");
@@ -8437,6 +8475,11 @@ int wolfSSL_EVP_CIPHER_iv_length(const WOLFSSL_EVP_CIPHER* cipher)
            (XSTRCMP(name, EVP_DES_EDE3_CBC) == 0)) {
         return DES_BLOCK_SIZE;
     }
+#endif
+
+#if defined(HAVE_CHACHA) && defined(HAVE_POLY1305)
+    if (XSTRCMP(name, EVP_CHACHA20_POLY1305) == 0)
+        return CHACHA20_POLY1305_AEAD_IV_SIZE;
 #endif
 
     (void)name;

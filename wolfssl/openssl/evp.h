@@ -1,6 +1,6 @@
 /* evp.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -267,6 +267,7 @@ enum {
     EVP_PKEY_HMAC     = NID_hmac,
     EVP_PKEY_HKDF     = NID_hkdf,
     EVP_PKEY_FALCON   = 300, /* Randomly picked value. */
+    EVP_PKEY_DILITHIUM= 301, /* Randomly picked value. */
     AES_128_CFB1_TYPE = 24,
     AES_192_CFB1_TYPE = 25,
     AES_256_CFB1_TYPE = 26,

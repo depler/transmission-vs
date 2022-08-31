@@ -35,6 +35,16 @@
     #include <wolfssl/wolfcrypt/rsa.h>
 #endif
 
+#if defined(OPENSSL_EXTRA) && !defined(NO_BIO) && defined(WOLFSSL_KEY_GEN) && \
+    (!defined(HAVE_USER_RSA) || defined(HAVE_ECC) || \
+     (!defined(NO_DSA) && !defined(HAVE_SELFTEST)))
+/* Forward declaration for wolfSSL_PEM_write_bio_RSA_PUBKEY,
+ * wolfSSL_PEM_write_bio_DSA_PUBKEY and wolfSSL_PEM_write_bio_EC_PUBKEY.
+ * Implementation in ssl.c.
+ */
+static int pem_write_bio_pubkey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key);
+#endif
+
 /*******************************************************************************
  * COMMON FUNCTIONS
  ******************************************************************************/
@@ -78,37 +88,72 @@ static int pk_bn_field_print_fp(XFILE fp, int indent, const char* field,
     if (ret == 1) {
         /* Print leading spaces, name and spaces before data. */
         if (indent > 0) {
-            XFPRINTF(fp, "%*s", indent, "");
+            if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                ret = 0;
         }
-        XFPRINTF(fp, "%s:\n", field);
+    }
+    if (ret == 1) {
+        if (XFPRINTF(fp, "%s:\n", field) < 0)
+            ret = 0;
+    }
+    if (ret == 1) {
         if (indent > 0) {
-            XFPRINTF(fp, "%*s", indent, "");
+            if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                ret = 0;
         }
-        XFPRINTF(fp, "%*s", HEX_INDENT, "");
-
+    }
+    if (ret == 1) {
+        if (XFPRINTF(fp, "%*s", HEX_INDENT, "") < 0)
+            ret = 0;
+    }
+    if (ret == 1) {
         /* Print first byte - should always exist. */
         if ((buf[i] != '\0') && (buf[i+1] != '\0')) {
-            XFPRINTF(fp, "%c", buf[i++]);
-            XFPRINTF(fp, "%c", buf[i++]);
+            if (XFPRINTF(fp, "%c", buf[i++]) < 0)
+                ret = 0;
+            else if (XFPRINTF(fp, "%c", buf[i++]) < 0)
+                    ret = 0;
         }
+    }
+    if (ret == 1) {
         /* Print each hexadecimal character with byte separator. */
         while ((buf[i] != '\0') && (buf[i+1] != '\0')) {
             /* Byte separator every two nibbles - one byte. */
-            XFPRINTF(fp, ":");
+            if (XFPRINTF(fp, ":") < 0) {
+                ret = 0;
+                break;
+            }
             /* New line after every 15 bytes - 30 nibbles. */
             if (i % MAX_DIGITS_PER_LINE == 0) {
-                XFPRINTF(fp, "\n");
-                if (indent > 0) {
-                    XFPRINTF(fp, "%*s", indent, "");
+                if (XFPRINTF(fp, "\n") < 0) {
+                    ret = 0;
+                    break;
                 }
-                XFPRINTF(fp, "%*s", HEX_INDENT, "");
+                if (indent > 0) {
+                    if (XFPRINTF(fp, "%*s", indent, "") < 0) {
+                        ret = 0;
+                        break;
+                    }
+                }
+                if (XFPRINTF(fp, "%*s", HEX_INDENT, "") < 0) {
+                    ret = 0;
+                    break;
+                }
             }
             /* Print two nibbles - one byte. */
-            XFPRINTF(fp, "%c", buf[i++]);
-            XFPRINTF(fp, "%c", buf[i++]);
+            if (XFPRINTF(fp, "%c", buf[i++]) < 0) {
+                ret = 0;
+                break;
+            }
+            if (XFPRINTF(fp, "%c", buf[i++]) < 0) {
+                ret = 0;
+                break;
+            }
         }
         /* Ensure on new line after data. */
-        XFPRINTF(fp, "\n");
+        if (XFPRINTF(fp, "\n") < 0) {
+            ret = 0;
+        }
     }
 
     /* Dispose of any allocated character array. */
@@ -741,7 +786,7 @@ WOLFSSL_RSA* wolfSSL_RSAPublicKey_dup(WOLFSSL_RSA *rsa)
     }
 
     /* Dispose of any allocated DER buffer. */
-    XFREE(derBuf, rsa->heap, DYNAMIC_TYPE_ASN1);
+    XFREE(derBuf, rsa ? rsa->heap : NULL, DYNAMIC_TYPE_ASN1);
     if (err) {
         /* Disposes of any created RSA key - on error. */
         wolfSSL_RSA_free(ret);
@@ -1052,7 +1097,7 @@ WOLFSSL_RSA* wolfSSL_d2i_RSAPrivateKey_bio(WOLFSSL_BIO *bio, WOLFSSL_RSA **out)
         key = NULL;
     }
     /* Dispose of allocated data. */
-    XFREE(der, bio->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(der, bio ? bio->heap : NULL, DYNAMIC_TYPE_TMP_BUFFER);
     return key;
 }
 #endif /* defined(WOLFSSL_KEY_GEN) && !defined(HAVE_USER_RSA) &&
@@ -1286,6 +1331,7 @@ int wolfSSL_RSA_LoadDer_ex(WOLFSSL_RSA* rsa, const unsigned char* derBuf,
             else {
                  WOLFSSL_MSG("RsaPublicKeyDecode failed");
             }
+            WOLFSSL_ERROR_VERBOSE(res);
             ret = -1;
         }
     }
@@ -1381,7 +1427,7 @@ int wolfSSL_PEM_write_bio_RSAPrivateKey(WOLFSSL_BIO* bio, WOLFSSL_RSA* rsa,
 
 #if defined(WOLFSSL_KEY_GEN) && !defined(HAVE_USER_RSA)
     /* Dispose of DER buffer. */
-    XFREE(derBuf, bio->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(derBuf, bio ? bio->heap : NULL, DYNAMIC_TYPE_TMP_BUFFER);
     if (pkey != NULL) {
         pkey->pkey.ptr = NULL;
         pkey->pkey_sz = 0;
@@ -1394,11 +1440,6 @@ int wolfSSL_PEM_write_bio_RSAPrivateKey(WOLFSSL_BIO* bio, WOLFSSL_RSA* rsa,
 }
 
 #if defined(WOLFSSL_KEY_GEN) && !defined(HAVE_USER_RSA)
-/* Forward declaration for wolfSSL_PEM_write_bio_RSA_PUBKEY.
- * Implementation in ssl.c.
- */
-static int pem_write_bio_pubkey(WOLFSSL_BIO* bio, WOLFSSL_EVP_PKEY* key);
-
 /* Writes PEM encoding of an RSA public key to a BIO.
  *
  * @param [in] bio  BIO object to write to.
@@ -1527,6 +1568,53 @@ WOLFSSL_RSA *wolfSSL_PEM_read_bio_RSA_PUBKEY(WOLFSSL_BIO* bio,
     return rsa;
 }
 
+#ifndef NO_FILESYSTEM
+/* Create an RSA public key by reading the PEM encoded data from the BIO.
+ *
+ * @param [in]  fp    File pointer to read from.
+ * @param [out] out   RSA key created.
+ * @param [in]  cb    Password callback when PEM encrypted.
+ * @param [in]  pass  NUL terminated string for passphrase when PEM encrypted.
+ * @return  RSA key on success.
+ * @return  NULL on failure.
+ */
+WOLFSSL_RSA *wolfSSL_PEM_read_RSA_PUBKEY(XFILE fp,
+    WOLFSSL_RSA** out, wc_pem_password_cb* cb, void *pass)
+{
+    WOLFSSL_EVP_PKEY* pkey;
+    WOLFSSL_RSA* rsa = NULL;
+
+    WOLFSSL_ENTER("wolfSSL_PEM_read_RSA_PUBKEY");
+
+    /* Validate parameters. */
+    if (fp == NULL) {
+        WOLFSSL_LEAVE("wolfSSL_PEM_read_RSA_PUBKEY", BAD_FUNC_ARG);
+        return NULL;
+    }
+
+    /* Read into a new EVP_PKEY. */
+    pkey = wolfSSL_PEM_read_PUBKEY(fp, NULL, cb, pass);
+    if (pkey != NULL) {
+        /* Since the WOLFSSL_RSA structure is being taken from WOLFSSL_EVP_PKEY
+         * the flag indicating that the WOLFSSL_RSA structure is owned should be
+         * FALSE to avoid having it free'd. */
+        pkey->ownRsa = 0;
+        rsa = pkey->rsa;
+        if (out != NULL) {
+            *out = rsa;
+        }
+
+        wolfSSL_EVP_PKEY_free(pkey);
+    }
+    else {
+        WOLFSSL_MSG("wolfSSL_PEM_read_PUBKEY failed");
+    }
+
+    WOLFSSL_LEAVE("wolfSSL_PEM_read_RSA_PUBKEY", 0);
+
+    return rsa;
+}
+#endif /* NO_FILESYSTEM */
 #endif /* !NO_BIO */
 
 #if defined(WOLFSSL_KEY_GEN) && !defined(HAVE_USER_RSA) && \
@@ -1645,7 +1733,7 @@ int wolfSSL_PEM_write_mem_RSAPrivateKey(RSA* rsa, const EVP_CIPHER* cipher,
 
     XFREE(tmp, NULL, DYNAMIC_TYPE_KEY);
     XFREE(cipherInfo, NULL, DYNAMIC_TYPE_STRING);
-    XFREE(derBuf, rsa->heap, DYNAMIC_TYPE_TMP_BUFFER);
+    XFREE(derBuf, rsa ? rsa->heap : NULL, DYNAMIC_TYPE_TMP_BUFFER);
     return ret;
 }
 
@@ -1744,6 +1832,47 @@ WOLFSSL_RSA* wolfSSL_PEM_read_bio_RSAPrivateKey(WOLFSSL_BIO* bio,
     return rsa;
 }
 
+/* Create an RSA private key by reading the PEM encoded data from the file
+ * pointer.
+ *
+ * @param [in]  fp    File pointer to read from.
+ * @param [out] out   RSA key created.
+ * @param [in]  cb    Password callback when PEM encrypted.
+ * @param [in]  pass  NUL terminated string for passphrase when PEM encrypted.
+ * @return  RSA key on success.
+ * @return  NULL on failure.
+ */
+#ifndef NO_FILESYSTEM
+WOLFSSL_RSA* wolfSSL_PEM_read_RSAPrivateKey(XFILE fp, WOLFSSL_RSA** out,
+    wc_pem_password_cb* cb, void* pass)
+{
+    WOLFSSL_EVP_PKEY* pkey;
+    WOLFSSL_RSA* rsa = NULL;
+
+    WOLFSSL_ENTER("PEM_read_RSAPrivateKey");
+
+    /* Read PEM encoded RSA private key from a file pointer. using generic EVP
+     * function.
+     */
+    pkey = wolfSSL_PEM_read_PrivateKey(fp, NULL, cb, pass);
+    if (pkey != NULL) {
+        /* Since the WOLFSSL_RSA structure is being taken from WOLFSSL_EVP_PKEY
+         * the flag indicating that the WOLFSSL_RSA structure is owned should be
+         * FALSE to avoid having it free'd. */
+        pkey->ownRsa = 0;
+        rsa = pkey->rsa;
+        if (out != NULL) {
+            /* Return WOLFSSL_RSA object through parameter too. */
+            *out = rsa;
+        }
+    }
+
+    /* Dispose of EVP_PKEY wrapper. */
+    wolfSSL_EVP_PKEY_free(pkey);
+    return rsa;
+}
+#endif /* !NO_FILESYSTEM */
+
 #endif /* NO_BIO */
 
 #if !defined(NO_FILESYSTEM)
@@ -1836,8 +1965,11 @@ int wolfSSL_RSA_print_fp(XFILE fp, WOLFSSL_RSA* rsa, int indent)
             ret = 0;
         }
         else {
-            XFPRINTF(fp, "%*s", indent, "");
-            XFPRINTF(fp, "RSA Private-Key: (%d bit, 2 primes)\n", keySize);
+            if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                ret = 0;
+            else if (XFPRINTF(fp, "RSA Private-Key: (%d bit, 2 primes)\n",
+                              keySize) < 0)
+                ret = 0;
         }
     }
     /* Print out any components available. */
@@ -2599,7 +2731,7 @@ int wolfSSL_RSA_set_ex_data_with_cleanup(WOLFSSL_RSA *rsa, int idx, void *data,
 {
     WOLFSSL_ENTER("wolfSSL_RSA_set_ex_data_with_cleanup");
 
-    return (rsa == NULL) ? NULL :
+    return (rsa == NULL) ? 0 :
         wolfSSL_CRYPTO_set_ex_data_with_cleanup(&rsa->ex_data, idx, data,
             freeCb);
 }
@@ -4062,8 +4194,17 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
 {
     int     ret = 1;
     int     err;
-    mp_int  tmp;
     mp_int* t = NULL;
+#ifdef WOLFSSL_SMALL_STACK
+    mp_int  *tmp = (mp_int *)XMALLOC(sizeof(*tmp), rsa->heap,
+                                     DYNAMIC_TYPE_TMP_BUFFER);
+    if (tmp == NULL) {
+        WOLFSSL_MSG("out of memory");
+        return -1;
+    }
+#else
+    mp_int  tmp[1];
+#endif
 
     WOLFSSL_ENTER("wolfSSL_RsaGenAdd");
 
@@ -4076,17 +4217,17 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
 
     if (ret == 1) {
         /* Initialize temp MP integer. */
-        if (mp_init(&tmp) != MP_OKAY) {
+        if (mp_init(tmp) != MP_OKAY) {
             WOLFSSL_MSG("mp_init error");
             ret = -1;
         }
     }
 
     if (ret == 1) {
-        t = &tmp;
+        t = tmp;
 
         /* Sub 1 from p into temp. */
-        err = mp_sub_d((mp_int*)rsa->p->internal, 1, &tmp);
+        err = mp_sub_d((mp_int*)rsa->p->internal, 1, tmp);
         if (err != MP_OKAY) {
             WOLFSSL_MSG("mp_sub_d error");
             ret = -1;
@@ -4094,7 +4235,7 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
     }
     if (ret == 1) {
         /* Calculate d mod (p - 1) into dmp1 MP integer of BN. */
-        err = mp_mod((mp_int*)rsa->d->internal, &tmp,
+        err = mp_mod((mp_int*)rsa->d->internal, tmp,
             (mp_int*)rsa->dmp1->internal);
         if (err != MP_OKAY) {
             WOLFSSL_MSG("mp_mod error");
@@ -4103,7 +4244,7 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
     }
     if (ret == 1) {
         /* Sub 1 from q into temp. */
-        err = mp_sub_d((mp_int*)rsa->q->internal, 1, &tmp);
+        err = mp_sub_d((mp_int*)rsa->q->internal, 1, tmp);
         if (err != MP_OKAY) {
             WOLFSSL_MSG("mp_sub_d error");
             ret = -1;
@@ -4111,7 +4252,7 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
     }
     if (ret == 1) {
         /* Calculate d mod (q - 1) into dmq1 MP integer of BN. */
-        err = mp_mod((mp_int*)rsa->d->internal, &tmp,
+        err = mp_mod((mp_int*)rsa->d->internal, tmp,
             (mp_int*)rsa->dmq1->internal);
         if (err != MP_OKAY) {
             WOLFSSL_MSG("mp_mod error");
@@ -4120,6 +4261,10 @@ int wolfSSL_RSA_GenAdd(WOLFSSL_RSA* rsa)
     }
 
     mp_clear(t);
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(tmp, rsa->heap, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
 
     return ret;
 }
@@ -4184,8 +4329,10 @@ int wolfSSL_DSA_print_fp(XFILE fp, WOLFSSL_DSA* dsa, int indent)
             ret = 0;
         }
         else {
-            XFPRINTF(fp, "%*s", indent, "");
-            XFPRINTF(fp, "Private-Key: (%d bit)\n", pBits);
+            if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                ret = 0;
+            else if (XFPRINTF(fp, "Private-Key: (%d bit)\n", pBits) < 0)
+                ret = 0;
         }
     }
     if (ret == 1 && dsa->priv_key != NULL) {
@@ -5077,7 +5224,7 @@ WOLFSSL_API int wolfSSL_i2d_DSAparams(const WOLFSSL_DSA* dsa,
     }
 
     if (ret < 0 && preAllocated == 0) {
-        XFREE(*out, key->heap, DYNAMIC_TYPE_OPENSSL);
+        XFREE(*out, key ? key->heap : NULL, DYNAMIC_TYPE_OPENSSL);
     }
 
     WOLFSSL_LEAVE("wolfSSL_i2d_DSAparams", ret);
@@ -5552,10 +5699,12 @@ int wolfSSL_DSA_LoadDer_ex(WOLFSSL_DSA* dsa, const unsigned char* derBuf,
     }
 
     if (ret < 0 && opt == WOLFSSL_DSA_LOAD_PRIVATE) {
+        WOLFSSL_ERROR_VERBOSE(ret);
         WOLFSSL_MSG("DsaPrivateKeyDecode failed");
         return -1;
     }
     else if (ret < 0 && opt == WOLFSSL_DSA_LOAD_PUBLIC) {
+        WOLFSSL_ERROR_VERBOSE(ret);
         WOLFSSL_MSG("DsaPublicKeyDecode failed");
         return -1;
     }
@@ -6440,7 +6589,7 @@ int wolfSSL_DH_size(WOLFSSL_DH* dh)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_768_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6468,7 +6617,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_768_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_1024_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6498,7 +6647,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_1024_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_1536_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6532,7 +6681,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_1536_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_2048_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6570,7 +6719,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_2048_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_3072_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6616,7 +6765,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_3072_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_4096_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6670,7 +6819,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_4096_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_6144_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -6741,7 +6890,7 @@ WOLFSSL_BIGNUM* wolfSSL_DH_6144_prime(WOLFSSL_BIGNUM* bn)
  */
 WOLFSSL_BIGNUM* wolfSSL_DH_8192_prime(WOLFSSL_BIGNUM* bn)
 {
-    const char prm[] = {
+    static const char prm[] = {
         "FFFFFFFFFFFFFFFFC90FDAA22168C234"
         "C4C6628B80DC1CD129024E088A67CC74"
         "020BBEA63B139B22514A08798E3404DD"
@@ -7673,13 +7822,18 @@ int wolfSSL_EC_KEY_print_fp(XFILE fp, WOLFSSL_EC_KEY* key, int indent)
         }
     }
     if (ret == 1) {
-        XFPRINTF(fp, "%*s", indent, "");
+        if (XFPRINTF(fp, "%*s", indent, "") < 0)
+            ret = 0;
+    }
+    if (ret == 1) {
         if (key->priv_key != NULL && !wolfSSL_BN_is_zero(key->priv_key)) {
-            XFPRINTF(fp, "Private-Key: (%d bit)\n", bits);
+            if (XFPRINTF(fp, "Private-Key: (%d bit)\n", bits) < 0)
+                ret = 0;
             priv = 1;
         }
         else {
-            XFPRINTF(fp, "Public-Key: (%d bit)\n", bits);
+            if (XFPRINTF(fp, "Public-Key: (%d bit)\n", bits) < 0)
+                ret = 0;
         }
 
         if (priv) {
@@ -7703,13 +7857,17 @@ int wolfSSL_EC_KEY_print_fp(XFILE fp, WOLFSSL_EC_KEY* key, int indent)
         if (nid > 0) {
             curve = wolfSSL_OBJ_nid2ln(nid);
             if (curve != NULL) {
-                XFPRINTF(fp, "%*s", indent, "");
-                XFPRINTF(fp, "ASN1 OID: %s\n", curve);
+                if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                    ret = 0;
+                else if (XFPRINTF(fp, "ASN1 OID: %s\n", curve) < 0)
+                    ret = 0;
             }
             nistName = wolfSSL_EC_curve_nid2nist(nid);
             if (nistName != NULL) {
-                XFPRINTF(fp, "%*s", indent, "");
-                XFPRINTF(fp, "NIST CURVE: %s\n", nistName);
+                if (XFPRINTF(fp, "%*s", indent, "") < 0)
+                    ret = 0;
+                else if (XFPRINTF(fp, "NIST CURVE: %s\n", nistName) < 0)
+                    ret = 0;
             }
         }
     }
@@ -9043,22 +9201,38 @@ int NIDToEccEnum(int n)
 
 int wolfSSL_EC_GROUP_order_bits(const WOLFSSL_EC_GROUP *group)
 {
-    int ret;
-    mp_int order;
+    int ret = 0;
+#ifdef WOLFSSL_SMALL_STACK
+    mp_int *order = (mp_int *)XMALLOC(sizeof(*order), NULL,
+                                      DYNAMIC_TYPE_TMP_BUFFER);
+    if (order == NULL)
+        return 0;
+#else
+    mp_int order[1];
+#endif
 
     if (group == NULL || group->curve_idx < 0) {
         WOLFSSL_MSG("wolfSSL_EC_GROUP_order_bits NULL error");
-        return 0;
+        ret = -1;
     }
 
-    ret = mp_init(&order);
+    if (ret == 0)
+        ret = mp_init(order);
+
     if (ret == 0) {
-        ret = mp_read_radix(&order, ecc_sets[group->curve_idx].order,
+        ret = mp_read_radix(order, ecc_sets[group->curve_idx].order,
             MP_RADIX_HEX);
         if (ret == 0)
-            ret = mp_count_bits(&order);
-        mp_clear(&order);
+            ret = mp_count_bits(order);
+        mp_clear(order);
     }
+
+#ifdef WOLFSSL_SMALL_STACK
+    XFREE(order, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+#endif
+
+    if (ret == -1)
+        ret = 0;
 
     return ret;
 }

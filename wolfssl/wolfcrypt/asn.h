@@ -1,6 +1,6 @@
 /* asn.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -674,6 +674,12 @@ enum DN_Tags {
     ASN_BUS_CAT       = 0x0f,   /* businessCategory */
     ASN_POSTAL_CODE   = 0x11,   /* postalCode */
     ASN_USER_ID       = 0x12,   /* UserID */
+#ifdef WOLFSSL_CERT_NAME_ALL
+    ASN_NAME          = 0x2a,   /* name */
+    ASN_GIVEN_NAME    = 0x29,   /* GN */
+    ASN_INITIALS      = 0x2b,   /* initials */
+    ASN_DNQUALIFIER   = 0x2e,   /* dnQualifier */
+#endif /* WOLFSSL_CERT_NAME_ALL */
 
     ASN_EMAIL_NAME    = 0x98,   /* not actual OID (see attrEmailOid) */
     ASN_CUSTOM_NAME   = 0x99,   /* not actual OID (see CertOidField) */
@@ -703,6 +709,12 @@ extern const WOLFSSL_ObjectInfo wolfssl_object_info[];
 #define WOLFSSL_COMMON_NAME      "/CN="
 #define WOLFSSL_LN_COMMON_NAME   "/commonName="
 #define WOLFSSL_SUR_NAME         "/SN="
+#ifdef WOLFSSL_CERT_NAME_ALL
+    #define WOLFSSL_NAME             "/N="
+    #define WOLFSSL_INITIALS         "/initials="
+    #define WOLFSSL_GIVEN_NAME       "/GN="
+    #define WOLFSSL_DNQUALIFIER      "/dnQualifier="
+#endif /* WOLFSSL_CERT_NAME_ALL */
 #define WOLFSSL_SERIAL_NUMBER    "/serialNumber="
 #define WOLFSSL_COUNTRY_NAME     "/C="
 #define WOLFSSL_LN_COUNTRY_NAME  "/countryName="
@@ -764,8 +776,8 @@ enum
     NID_id_pkix_OCSP_basic = 74,
     NID_any_policy = 75,
     NID_anyExtendedKeyUsage = 76,
-    NID_givenName = 99,
-    NID_initials = 101,
+    NID_givenName = 99, /* 2.5.4.42 */
+    NID_initials = 101, /* 2.5.4.43 */
     NID_title = 106,
     NID_description = 107,
     NID_basic_constraints = 133,
@@ -788,9 +800,10 @@ enum
     NID_buildingName = 1494,
 
 
-    NID_dnQualifier = 174,
+    NID_dnQualifier = 174,             /* 2.5.4.46 */
     NID_commonName = 14,               /* CN Changed to not conflict
                                         * with PBE_SHA1_DES3 */
+    NID_name = 173,                    /* N , OID = 2.5.4.41 */
     NID_surname = 0x04,                /* SN */
     NID_serialNumber = 0x05,           /* serialNumber */
     NID_countryName = 0x06,            /* C  */
@@ -918,8 +931,9 @@ enum Misc_ASN {
 #ifdef WOLFSSL_CERT_GEN
     #ifdef WOLFSSL_CERT_REQ
                           /* Max encoded cert req attributes length */
-        MAX_ATTRIB_SZ   = MAX_SEQ_SZ * 3 + (11 + MAX_SEQ_SZ) * 2 +
-                          MAX_PRSTR_SZ + CTC_NAME_SIZE, /* 11 is the OID size */
+        MAX_ATTRIB_SZ   = MAX_SEQ_SZ * 4 + (11 + MAX_SEQ_SZ) * 3 +
+                          MAX_PRSTR_SZ * 2 + CTC_NAME_SIZE * 2,
+                          /* 11 is the OID size */
     #endif
     #if defined(WOLFSSL_ALT_NAMES) || defined(WOLFSSL_CERT_EXT)
         MAX_EXTENSIONS_SZ   = 1 + MAX_LENGTH_SZ + CTC_MAX_ALT_SIZE,
@@ -1038,7 +1052,6 @@ enum Hash_Sum  {
     SHAKE256h = 425
 };
 
-
 #if !defined(NO_DES3) || !defined(NO_AES)
 enum Block_Sum {
 #ifdef WOLFSSL_AES_128
@@ -1065,16 +1078,23 @@ enum Block_Sum {
 
 
 enum Key_Sum {
-    DSAk           = 515,
-    RSAk           = 645,
-    ECDSAk         = 518,
-    ED25519k       = 256, /* 1.3.101.112 */
-    X25519k        = 254, /* 1.3.101.110 */
-    ED448k         = 257, /* 1.3.101.113 */
-    X448k          = 255, /* 1.3.101.111 */
-    DHk            = 647, /* dhKeyAgreement OID: 1.2.840.113549.1.3.1 */
-    FALCON_LEVEL1k = 268, /* 1.3.9999.3.1 */
-    FALCON_LEVEL5k = 271  /* 1.3.9999.3.4 */
+    DSAk              = 515,
+    RSAk              = 645,
+    RSAPSSk           = 654,
+    ECDSAk            = 518,
+    ED25519k          = 256, /* 1.3.101.112 */
+    X25519k           = 254, /* 1.3.101.110 */
+    ED448k            = 257, /* 1.3.101.113 */
+    X448k             = 255, /* 1.3.101.111 */
+    DHk               = 647, /* dhKeyAgreement OID: 1.2.840.113549.1.3.1 */
+    FALCON_LEVEL1k    = 268, /* 1.3.9999.3.1 */
+    FALCON_LEVEL5k    = 271, /* 1.3.9999.3.4 */
+    DILITHIUM_LEVEL2k = 213,    /* 1.3.6.1.4.1.2.267.7.4.4 */
+    DILITHIUM_LEVEL3k = 216,    /* 1.3.6.1.4.1.2.267.7.6.5 */
+    DILITHIUM_LEVEL5k = 220,    /* 1.3.6.1.4.1.2.267.7.8.7 */
+    DILITHIUM_AES_LEVEL2k = 217,/* 1.3.6.1.4.1.2.267.11.4.4 */
+    DILITHIUM_AES_LEVEL3k = 221,/* 1.3.6.1.4.1.2.267.11.6.5 + 1 (See GetOID() in asn.c) */
+    DILITHIUM_AES_LEVEL5k = 224,/* 1.3.6.1.4.1.2.267.11.8.7 */
 };
 
 #if !defined(NO_AES) || defined(HAVE_PKCS7)
@@ -1105,7 +1125,8 @@ enum Key_Agree {
 
 
 enum KDF_Sum {
-    PBKDF2_OID = 660
+    PBKDF2_OID = 660,
+    MGF1_OID = 652,
 };
 
 
@@ -1237,6 +1258,7 @@ enum CsrAttrType {
     DNQUALIFIER_OID = 135,
     INITIALS_OID = 132,
     SURNAME_OID = 93,
+    NAME_OID = 130,
     GIVEN_NAME_OID = 131,
 };
 #endif
@@ -1388,6 +1410,7 @@ struct SignatureCtx {
     #endif
     #ifdef HAVE_PQC
         struct falcon_key* falcon;
+        struct dilithium_key* dilithium;
     #endif
         void* ptr;
     } key;
@@ -1415,6 +1438,11 @@ struct SignatureCtx {
 #if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_SCEPROTECT) ||\
     defined(HAVE_PK_CALLBACKS)
     CertAttribute  CertAtt;
+#endif
+#ifdef WC_RSA_PSS
+    enum wc_HashType hash;
+    int mgf;
+    int saltLen;
 #endif
 #endif
 };
@@ -1534,6 +1562,10 @@ struct DecodedCert {
     word32  sigLength;               /* length of signature              */
     word32  signatureOID;            /* sum of algorithm object id       */
     word32  keyOID;                  /* sum of key algo  object id       */
+#ifdef WC_RSA_PSS
+    word32  sigParamsIndex;          /* start of signature parameters    */
+    word32  sigParamsLength;         /* length of signature parameters   */
+#endif
     int     version;                 /* cert version, 1 or 3             */
     DNS_entry* altNames;             /* alt names list of dns entries    */
 #ifndef IGNORE_NAME_CONSTRAINTS
@@ -1647,6 +1679,20 @@ struct DecodedCert {
     char*   subjectSN;
     int     subjectSNLen;
     char    subjectSNEnc;
+    #ifdef WOLFSSL_CERT_NAME_ALL
+    char*   subjectN;
+    int     subjectNLen;
+    char    subjectNEnc;
+    char*   subjectI;
+    int     subjectILen;
+    char    subjectIEnc;
+    char*   subjectGN;
+    int     subjectGNLen;
+    char    subjectGNEnc;
+    char*   subjectDNQ;
+    int     subjectDNQLen;
+    char    subjectDNQEnc;
+    #endif /*WOLFSSL_CERT_NAME_ALL */
     char*   subjectC;
     int     subjectCLen;
     char    subjectCEnc;
@@ -2144,6 +2190,11 @@ WOLFSSL_API int EccEnumToNID(int n);
 WOLFSSL_LOCAL void InitSignatureCtx(SignatureCtx* sigCtx, void* heap, int devId);
 WOLFSSL_LOCAL void FreeSignatureCtx(SignatureCtx* sigCtx);
 
+WOLFSSL_LOCAL int SetAsymKeyDerPublic(const byte* pubKey, word32 pubKeyLen,
+    byte* output, word32 outLen, int keyType, int withHeader);
+WOLFSSL_LOCAL int DecodeAsymKeyPublic(const byte* input, word32* inOutIdx, word32 inSz,
+    byte* pubKey, word32* pubKeyLen, int keyType);
+
 #ifndef NO_CERTS
 
 WOLFSSL_LOCAL int wc_EncryptedInfoParse(EncryptedInfo* info,
@@ -2169,13 +2220,19 @@ WOLFSSL_LOCAL int wc_MIME_free_hdrs(MimeHdr* head);
 #ifdef WOLFSSL_CERT_GEN
 
 enum cert_enums {
-    RSA_KEY           = 10,
-    ECC_KEY           = 12,
-    ED25519_KEY       = 13,
-    ED448_KEY         = 14,
-    DSA_KEY           = 15,
-    FALCON_LEVEL1_KEY = 16,
-    FALCON_LEVEL5_KEY = 17
+    RSA_KEY                  = 10,
+    ECC_KEY                  = 12,
+    ED25519_KEY              = 13,
+    ED448_KEY                = 14,
+    DSA_KEY                  = 15,
+    FALCON_LEVEL1_KEY        = 16,
+    FALCON_LEVEL5_KEY        = 17,
+    DILITHIUM_LEVEL2_KEY     = 18,
+    DILITHIUM_LEVEL3_KEY     = 19,
+    DILITHIUM_LEVEL5_KEY     = 20,
+    DILITHIUM_AES_LEVEL2_KEY = 21,
+    DILITHIUM_AES_LEVEL3_KEY = 22,
+    DILITHIUM_AES_LEVEL5_KEY = 23,
 };
 
 #endif /* WOLFSSL_CERT_GEN */
@@ -2357,6 +2414,8 @@ struct RevokedCert {
     byte         serialNumber[EXTERNAL_SERIAL_SIZE];
     int          serialSz;
     RevokedCert* next;
+    byte         revDate[MAX_DATE_SIZE];
+    byte         revDateFormat;
 };
 
 typedef struct DecodedCRL DecodedCRL;
@@ -2374,12 +2433,18 @@ struct DecodedCRL {
     byte    lastDateFormat;          /* format of last date */
     byte    nextDateFormat;          /* format of next date */
     RevokedCert* certs;              /* revoked cert list  */
+#if defined(OPENSSL_EXTRA)
+    byte*   issuer;                  /* full name including common name  */
+    word32  issuerSz;                /* length of the issuer             */
+#endif
     int          totalCerts;         /* number on list     */
+    int          version;            /* version of cert    */
     void*   heap;
 #ifndef NO_SKID
     byte    extAuthKeyIdSet;
     byte    extAuthKeyId[SIGNER_DIGEST_SIZE]; /* Authority Key ID        */
 #endif
+    int          crlNumber;          /* CRL number extension  */
 };
 
 WOLFSSL_LOCAL void InitDecodedCRL(DecodedCRL* dcrl, void* heap);
@@ -2401,6 +2466,24 @@ WOLFSSL_LOCAL void FreeDecodedCRL(DecodedCRL* dcrl);
 #endif
 
 #endif /* !NO_ASN */
+
+
+#if ((defined(HAVE_ED25519) && defined(HAVE_ED25519_KEY_IMPORT)) \
+    || (defined(HAVE_CURVE25519) && defined(HAVE_CURVE25519_KEY_IMPORT)) \
+    || (defined(HAVE_ED448) && defined(HAVE_ED448_KEY_IMPORT)) \
+    || (defined(HAVE_CURVE448) && defined(HAVE_CURVE448_KEY_IMPORT)) \
+    || (defined(HAVE_PQC) && defined(HAVE_FALCON)) \
+    || (defined(HAVE_PQC) && defined(HAVE_DILITHIUM)))
+WOLFSSL_LOCAL int DecodeAsymKey(const byte* input, word32* inOutIdx,
+    word32 inSz, byte* privKey, word32* privKeyLen, byte* pubKey,
+    word32* pubKeyLen, int keyType);
+#endif
+
+#ifdef WC_ENABLE_ASYM_KEY_EXPORT
+WOLFSSL_LOCAL int SetAsymKeyDer(const byte* privKey, word32 privKeyLen,
+    const byte* pubKey, word32 pubKeyLen, byte* output, word32 outLen,
+    int keyType);
+#endif
 
 
 #if !defined(NO_ASN) || !defined(NO_PWDBASED)

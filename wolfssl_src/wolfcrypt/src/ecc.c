@@ -1,6 +1,6 @@
 /* ecc.c
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -56,7 +56,7 @@ Possible ECC enable options:
  *                      FP cache is not supported for SECP160R1, SECP160R2,
  *                      SECP160K1 and SECP224K1. These do not work with scalars
  *                      that are the length of the order when the order is
- *                      longer than the prime.
+ *                      longer than the prime. Use wc_ecc_fp_free to free cache.
  * USE_ECC_B_PARAM:     Enable ECC curve B param                default: off
  *                      (on for HAVE_COMP_KEY)
  * WOLFSSL_ECC_CURVE_STATIC:                                    default off (on for windows)
@@ -4219,10 +4219,11 @@ static void wc_ecc_free_async(ecc_key* key)
   outlen           [in/out] The max size and resulting size of the shared secret
   return           MP_OKAY if successful
 */
+WOLFSSL_ABI
 int wc_ecc_shared_secret(ecc_key* private_key, ecc_key* public_key, byte* out,
                       word32* outlen)
 {
-   int err;
+   int err = 0;
 
 #if defined(WOLFSSL_CRYPTOCELL) && !defined(WOLFSSL_ATECC508A) && \
    !defined(WOLFSSL_ATECC608A)
@@ -5438,6 +5439,7 @@ void wc_ecc_key_free(ecc_key* key)
  return       MP_OKAY if successful,
  upon error all allocated memory will be freed
  */
+WOLFSSL_ABI
 int wc_ecc_make_key(WC_RNG* rng, int keysize, ecc_key* key)
 {
     return wc_ecc_make_key_ex(rng, keysize, key, ECC_CURVE_DEF);
@@ -5518,6 +5520,7 @@ int wc_ecc_init_ex(ecc_key* key, void* heap, int devId)
     return ret;
 }
 
+WOLFSSL_ABI
 int wc_ecc_init(ecc_key* key)
 {
 #ifdef WOLFSSL_QNX_CAAM
@@ -7111,7 +7114,7 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
 #endif
 {
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-  ecc_key        key;
+  ecc_key        *key = NULL;
 #endif
 #ifdef WOLFSSL_SMALL_STACK
   ecc_point**    precomp = NULL;
@@ -7152,24 +7155,35 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
 #endif
 
 #ifdef WOLFSSL_SMALL_STACK
+  #ifdef WOLFSSL_SMALL_STACK_CACHE
+  key = (ecc_key *)XMALLOC(sizeof(*key), heap, DYNAMIC_TYPE_ECC_BUFFER);
+  if (key == NULL) {
+     XFREE(tB, heap, DYNAMIC_TYPE_ECC_BUFFER);
+     XFREE(tA, heap, DYNAMIC_TYPE_ECC_BUFFER);
+     return GEN_MEM_ERR;
+  }
+  #endif
   precomp = (ecc_point**)XMALLOC(sizeof(ecc_point*) * SHAMIR_PRECOMP_SZ, heap,
                                                        DYNAMIC_TYPE_ECC_BUFFER);
   if (precomp == NULL) {
      XFREE(tB, heap, DYNAMIC_TYPE_ECC_BUFFER);
      XFREE(tA, heap, DYNAMIC_TYPE_ECC_BUFFER);
+  #ifdef WOLFSSL_SMALL_STACK_CACHE
+     XFREE(key, heap, DYNAMIC_TYPE_ECC_BUFFER);
+  #endif
      return GEN_MEM_ERR;
   }
 #endif
 #ifdef WOLFSSL_SMALL_STACK_CACHE
-  key.t1 = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
-  key.t2 = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
+  key->t1 = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
+  key->t2 = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
 #ifdef ALT_ECC_SIZE
   key.x = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
   key.y = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
   key.z = (mp_int*)XMALLOC(sizeof(mp_int), heap, DYNAMIC_TYPE_ECC);
 #endif
 
-  if (key.t1 == NULL || key.t2 == NULL
+  if (key->t1 == NULL || key->t2 == NULL
 #ifdef ALT_ECC_SIZE
      || key.x == NULL || key.y == NULL || key.z == NULL
 #endif
@@ -7179,14 +7193,15 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
       XFREE(key.y, heap, DYNAMIC_TYPE_ECC);
       XFREE(key.x, heap, DYNAMIC_TYPE_ECC);
 #endif
-      XFREE(key.t2, heap, DYNAMIC_TYPE_ECC);
-      XFREE(key.t1, heap, DYNAMIC_TYPE_ECC);
+      XFREE(key->t2, heap, DYNAMIC_TYPE_ECC);
+      XFREE(key->t1, heap, DYNAMIC_TYPE_ECC);
       XFREE(precomp, heap, DYNAMIC_TYPE_ECC_BUFFER);
       XFREE(tB, heap, DYNAMIC_TYPE_ECC_BUFFER);
       XFREE(tA, heap, DYNAMIC_TYPE_ECC_BUFFER);
+      XFREE(key, heap, DYNAMIC_TYPE_ECC_BUFFER);
       return MEMORY_E;
   }
-  C->key = &key;
+  C->key = key;
 #endif /* WOLFSSL_SMALL_STACK_CACHE */
 
   /* init variables */
@@ -7230,7 +7245,7 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
             if (err != MP_OKAY)
                 break;
         #ifdef WOLFSSL_SMALL_STACK_CACHE
-            precomp[x]->key = &key;
+            precomp[x]->key = key;
         #endif
         }
     }
@@ -7399,8 +7414,9 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
   XFREE(key.y, heap, DYNAMIC_TYPE_ECC);
   XFREE(key.x, heap, DYNAMIC_TYPE_ECC);
 #endif
-  XFREE(key.t2, heap, DYNAMIC_TYPE_ECC);
-  XFREE(key.t1, heap, DYNAMIC_TYPE_ECC);
+  XFREE(key->t2, heap, DYNAMIC_TYPE_ECC);
+  XFREE(key->t1, heap, DYNAMIC_TYPE_ECC);
+  XFREE(key, heap, DYNAMIC_TYPE_ECC);
   C->key = NULL;
 #endif
 #ifdef WOLFSSL_SMALL_STACK
@@ -7443,6 +7459,7 @@ int ecc_mul2add(ecc_point* A, mp_int* kA,
  key         The corresponding public ECC key
  return      MP_OKAY if successful (even if the signature is not valid)
  */
+WOLFSSL_ABI
 int wc_ecc_verify_hash(const byte* sig, word32 siglen, const byte* hash,
                        word32 hashlen, int* res, ecc_key* key)
 {
@@ -8271,21 +8288,21 @@ int wc_ecc_import_point_der_ex(const byte* in, word32 inLen,
         #ifndef WOLFSSL_SP_NO_256
         if (curve_idx != ECC_CUSTOM_IDX &&
                                       ecc_sets[curve_idx].id == ECC_SECP256R1) {
-            sp_ecc_uncompress_256(point->x, pointType, point->y);
+            err = sp_ecc_uncompress_256(point->x, pointType, point->y);
         }
         else
         #endif
         #ifdef WOLFSSL_SP_384
         if (curve_idx != ECC_CUSTOM_IDX &&
                                       ecc_sets[curve_idx].id == ECC_SECP384R1) {
-            sp_ecc_uncompress_384(point->x, pointType, point->y);
+            err = sp_ecc_uncompress_384(point->x, pointType, point->y);
         }
         else
         #endif
         #ifdef WOLFSSL_SP_521
         if (curve_idx != ECC_CUSTOM_IDX &&
                                       ecc_sets[curve_idx].id == ECC_SECP521R1) {
-            sp_ecc_uncompress_521(point->x, pointType, point->y);
+            err = sp_ecc_uncompress_521(point->x, pointType, point->y);
         }
         else
         #endif
@@ -8407,7 +8424,7 @@ int wc_ecc_import_point_der_ex(const byte* in, word32 inLen,
         if (compressed == 0)
 #endif
             err = mp_read_unsigned_bin(point->y, in + keysize, keysize);
-     }
+    }
     if (err == MP_OKAY)
         err = mp_set(point->z, 1);
 
@@ -8588,6 +8605,7 @@ done:
 #endif /* HAVE_COMP_KEY */
 
 /* export public ECC key in ANSI X9.63 format */
+WOLFSSL_ABI
 int wc_ecc_export_x963(ecc_key* key, byte* out, word32* outLen)
 {
    int    ret = MP_OKAY;
@@ -8685,6 +8703,7 @@ done:
 
 /* export public ECC key in ANSI X9.63 format, extended with
  * compression option */
+WOLFSSL_ABI
 int wc_ecc_export_x963_ex(ecc_key* key, byte* out, word32* outLen,
                           int compressed)
 {
@@ -9376,6 +9395,7 @@ static int _ecc_validate_public_key(ecc_key* key, int partial, int priv)
 
 
 /* perform sanity checks on ecc key validity, 0 on success */
+WOLFSSL_ABI
 int wc_ecc_check_key(ecc_key* key)
 {
     int ret;
@@ -9581,19 +9601,22 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
 #else
     #ifndef WOLFSSL_SP_NO_256
         if (key->dp->id == ECC_SECP256R1) {
-            sp_ecc_uncompress_256(key->pubkey.x, pointType, key->pubkey.y);
+            err = sp_ecc_uncompress_256(key->pubkey.x, pointType,
+                key->pubkey.y);
         }
         else
     #endif
     #ifdef WOLFSSL_SP_384
         if (key->dp->id == ECC_SECP384R1) {
-            sp_ecc_uncompress_384(key->pubkey.x, pointType, key->pubkey.y);
+            err = sp_ecc_uncompress_384(key->pubkey.x, pointType,
+                key->pubkey.y);
         }
         else
     #endif
     #ifdef WOLFSSL_SP_521
         if (key->dp->id == ECC_SECP521R1) {
-            sp_ecc_uncompress_521(key->pubkey.x, pointType, key->pubkey.y);
+            err = sp_ecc_uncompress_521(key->pubkey.x, pointType,
+                key->pubkey.y);
         }
         else
     #endif
@@ -9609,8 +9632,7 @@ int wc_ecc_import_x963_ex(const byte* in, word32 inLen, ecc_key* key,
         if (compressed == 0)
     #endif
         {
-            err = mp_read_unsigned_bin(key->pubkey.y, in + keysize,
-                                                                      keysize);
+            err = mp_read_unsigned_bin(key->pubkey.y, in + keysize, keysize);
         }
     }
     if (err == MP_OKAY)
@@ -9758,6 +9780,7 @@ int wc_ecc_export_ex(ecc_key* key, byte* qx, word32* qxLen,
 
 /* export ecc private key only raw, outLen is in/out size as unsigned bin
    return MP_OKAY on success */
+WOLFSSL_ABI
 int wc_ecc_export_private_only(ecc_key* key, byte* out, word32* outLen)
 {
     if (out == NULL || outLen == NULL) {
@@ -9939,6 +9962,36 @@ int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
         ret = ASN_GETINT_E;
     }
 #endif /* HAVE_WOLF_BIGINT */
+#ifdef WOLFSSL_VALIDATE_ECC_IMPORT
+    if (ret == 0) {
+    #ifdef WOLFSSL_SMALL_STACK
+        mp_int* order = NULL;
+    #else
+        mp_int order[1];
+    #endif
+
+    #ifdef WOLFSSL_SMALL_STACK
+        order = (mp_int*)XMALLOC(sizeof(mp_int), key->heap, DYNAMIC_TYPE_ECC);
+        if (order == NULL) {
+            ret = MEMORY_E;
+        }
+    #endif
+
+        if (ret == 0) {
+            ret = mp_init(order);
+        }
+        if (ret == 0) {
+            ret = mp_read_radix(order, key->dp->order, MP_RADIX_HEX);
+        }
+        if ((ret == 0) && (mp_cmp(&key->k, order) != MP_LT)) {
+            ret = ECC_PRIV_KEY_E;
+        }
+
+    #ifdef WOLFSSL_SMALL_STACK
+        XFREE(order, key->heap, DYNAMIC_TYPE_ECC);
+    #endif
+    }
+#endif /* WOLFSSL_VALIDATE_ECC_IMPORT */
 
 #endif /* WOLFSSL_CRYPTOCELL */
 
@@ -9957,6 +10010,7 @@ int wc_ecc_import_private_key_ex(const byte* priv, word32 privSz,
 }
 
 /* ecc private key import, public key in ANSI X9.63 format, private raw */
+WOLFSSL_ABI
 int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
                            word32 pubSz, ecc_key* key)
 {
@@ -9974,6 +10028,7 @@ int wc_ecc_import_private_key(const byte* priv, word32 privSz, const byte* pub,
    outlen  [in/out] output buffer size, output signature size
    return  MP_OKAY on success
 */
+WOLFSSL_ABI
 int wc_ecc_rs_to_sig(const char* r, const char* s, byte* out, word32* outlen)
 {
     int err;
@@ -10349,6 +10404,7 @@ int wc_ecc_import_unsigned(ecc_key* key, const byte* qx, const byte* qy,
    curveName ECC curve name, from ecc_sets[]
    return    MP_OKAY on success
 */
+WOLFSSL_ABI
 int wc_ecc_import_raw(ecc_key* key, const char* qx, const char* qy,
                    const char* d, const char* curveName)
 {
@@ -10394,6 +10450,7 @@ static int ecc_public_key_size(ecc_key* key, word32* sz)
 #endif
 
 /* key size in octets */
+WOLFSSL_ABI
 int wc_ecc_size(ecc_key* key)
 {
     if (key == NULL || key->dp == NULL)
@@ -10403,6 +10460,7 @@ int wc_ecc_size(ecc_key* key)
 }
 
 /* maximum signature size based on key size */
+WOLFSSL_ABI
 int wc_ecc_sig_size_calc(int sz)
 {
     int maxSigSz = 0;
@@ -10420,6 +10478,7 @@ int wc_ecc_sig_size_calc(int sz)
 }
 
 /* maximum signature size based on actual key curve */
+WOLFSSL_ABI
 int wc_ecc_sig_size(const ecc_key* key)
 {
     int maxSigSz;
@@ -12262,6 +12321,7 @@ void wc_ecc_fp_init(void)
 
 
 /** Free the Fixed Point cache */
+WOLFSSL_ABI
 void wc_ecc_fp_free(void)
 {
 #if !defined(WOLFSSL_SP_MATH)
@@ -12452,6 +12512,31 @@ int wc_ecc_ctx_set_peer_salt(ecEncCtx* ctx, const byte* salt)
     return 0;
 }
 
+/* Set the salt pointer into context.
+ *
+ * @param  [in, out]  ctx   ECIES context object.
+ * @param  [in]       salt  Salt to use with KDF.
+ * @param  [in]       len   Length of salt in bytes.
+ * @return  0 on success.
+ * @return  BAD_FUNC_ARG when ctx is NULL or salt is NULL and len is not 0.
+ */
+int wc_ecc_ctx_set_kdf_salt(ecEncCtx* ctx, const byte* salt, word32 len)
+{
+    if (ctx == NULL || (salt == NULL && len != 0))
+        return BAD_FUNC_ARG;
+
+    ctx->kdfSalt   = salt;
+    ctx->kdfSaltSz = len;
+
+    if (ctx->protocol == REQ_RESP_CLIENT) {
+        ctx->srvSt = ecSRV_SALT_SET;
+    }
+    else if (ctx->protocol == REQ_RESP_SERVER) {
+        ctx->srvSt = ecSRV_SALT_SET;
+    }
+
+    return 0;
+}
 
 static int ecc_ctx_set_salt(ecEncCtx* ctx, int flags)
 {
@@ -12500,6 +12585,7 @@ static void ecc_ctx_init(ecEncCtx* ctx, int flags, WC_RNG* rng)
 
 
 /* allow ecc context reset so user doesn't have to init/free for reuse */
+WOLFSSL_ABI
 int wc_ecc_ctx_reset(ecEncCtx* ctx, WC_RNG* rng)
 {
     if (ctx == NULL || rng == NULL)
@@ -12532,6 +12618,7 @@ ecEncCtx* wc_ecc_ctx_new_ex(int flags, WC_RNG* rng, void* heap)
 
 
 /* alloc/init and set defaults, return new Context  */
+WOLFSSL_ABI
 ecEncCtx* wc_ecc_ctx_new(int flags, WC_RNG* rng)
 {
     return wc_ecc_ctx_new_ex(flags, rng, NULL);
@@ -12539,6 +12626,7 @@ ecEncCtx* wc_ecc_ctx_new(int flags, WC_RNG* rng)
 
 
 /* free any resources, clear any keys */
+WOLFSSL_ABI
 void wc_ecc_ctx_free(ecEncCtx* ctx)
 {
     if (ctx) {
@@ -12569,12 +12657,12 @@ static int ecc_get_key_sizes(ecEncCtx* ctx, int* encKeySz, int* ivSz,
         #if !defined(NO_AES) && defined(WOLFSSL_AES_COUNTER)
             case ecAES_128_CTR:
                 *encKeySz = KEY_SIZE_128;
-                *ivSz     = IV_SIZE_128;
+                *ivSz     = 12;
                 *blockSz  = 1;
                 break;
             case ecAES_256_CTR:
                 *encKeySz = KEY_SIZE_256;
-                *ivSz     = IV_SIZE_128;
+                *ivSz     = 12;
                 *blockSz  = 1;
                 break;
         #endif
@@ -12612,7 +12700,9 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
     int          ret = 0;
     word32       blockSz = 0;
 #ifndef WOLFSSL_ECIES_OLD
+#ifndef WOLFSSL_ECIES_GEN_IV
     byte         iv[ECC_MAX_IV_SIZE];
+#endif
     word32       pubKeySz = 0;
 #endif
     word32       digestSz = 0;
@@ -12691,6 +12781,9 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
 
 #ifdef WOLFSSL_ECIES_OLD
     if (*outSz < (msgSz + digestSz))
+        return BUFFER_E;
+#elif defined(WOLFSSL_ECIES_GEN_IV)
+    if (*outSz < (pubKeySz + ivSz + msgSz + digestSz))
         return BUFFER_E;
 #else
     if (*outSz < (pubKeySz + msgSz + digestSz))
@@ -12773,13 +12866,21 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
         encKey = keys + offset;
         encIv  = encKey + encKeySz;
         macKey = encKey + encKeySz + ivSz;
+    #elif defined(WOLFSSL_ECIES_GEN_IV)
+        encKey = keys + offset;
+        encIv  = out;
+        out += ivSz;
+        macKey = encKey + encKeySz;
+        ret = wc_RNG_GenerateBlock(privKey->rng, encIv, ivSz);
     #else
         XMEMSET(iv, 0, ivSz);
         encKey = keys + offset;
         encIv  = iv;
         macKey = encKey + encKeySz;
     #endif
+    }
 
+    if (ret == 0) {
        switch (ctx->encAlgo) {
             case ecAES_128_CBC:
             case ecAES_256_CBC:
@@ -12821,19 +12922,26 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
             case ecAES_256_CTR:
             {
         #if !defined(NO_AES) && defined(WOLFSSL_AES_COUNTER)
-            #ifdef WOLFSSL_SMALL_STACK
+                byte ctr_iv[AES_BLOCK_SIZE];
+            #ifndef WOLFSSL_SMALL_STACK
+                Aes aes[1];
+            #else
                 Aes *aes = (Aes *)XMALLOC(sizeof *aes, ctx->heap,
                                             DYNAMIC_TYPE_AES);
                 if (aes == NULL) {
                     ret = MEMORY_E;
                     break;
                 }
-            #else
-                Aes aes[1];
             #endif
+
+                /* Include 4 byte counter starting at all zeros. */
+                XMEMCPY(ctr_iv, encIv, WOLFSSL_ECIES_GEN_IV_SIZE);
+                XMEMSET(ctr_iv + WOLFSSL_ECIES_GEN_IV_SIZE, 0,
+                    AES_BLOCK_SIZE - WOLFSSL_ECIES_GEN_IV_SIZE);
+
                 ret = wc_AesInit(aes, NULL, INVALID_DEVID);
                 if (ret == 0) {
-                    ret = wc_AesSetKey(aes, encKey, encKeySz, encIv,
+                    ret = wc_AesSetKey(aes, encKey, encKeySz, ctr_iv,
                                                                 AES_ENCRYPTION);
                     if (ret == 0) {
                         ret = wc_AesCtrEncrypt(aes, out, msg, msgSz);
@@ -12877,8 +12985,14 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                 if (ret == 0) {
                     ret = wc_HmacSetKey(hmac, WC_SHA256, macKey,
                                                          WC_SHA256_DIGEST_SIZE);
-                    if (ret == 0)
+                    if (ret == 0) {
+                    #if !defined(WOLFSSL_ECIES_GEN_IV)
                         ret = wc_HmacUpdate(hmac, out, msgSz);
+                    #else
+                        /* IV is before encrypted message. */
+                        ret = wc_HmacUpdate(hmac, encIv, ivSz + msgSz);
+                    #endif
+                    }
                     if (ret == 0)
                         ret = wc_HmacUpdate(hmac, ctx->macSalt, ctx->macSaltSz);
                     if (ret == 0)
@@ -12900,6 +13014,8 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
     if (ret == 0) {
 #ifdef WOLFSSL_ECIES_OLD
         *outSz = msgSz + digestSz;
+#elif defined(WOLFSSL_ECIES_GEN_IV)
+        *outSz = pubKeySz + ivSz + msgSz + digestSz;
 #else
         *outSz = pubKeySz + msgSz + digestSz;
 #endif
@@ -12919,6 +13035,7 @@ int wc_ecc_encrypt_ex(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
    ctx holds non default algos and inputs
    msgSz should be the right size for encAlgo, i.e., already padded
    return 0 on success */
+WOLFSSL_ABI
 int wc_ecc_encrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                 word32 msgSz, byte* out, word32* outSz, ecEncCtx* ctx)
 {
@@ -12928,13 +13045,16 @@ int wc_ecc_encrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
 /* ecc decrypt with shared secret run through kdf
    ctx holds non default algos and inputs
    return 0 on success */
+WOLFSSL_ABI
 int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                 word32 msgSz, byte* out, word32* outSz, ecEncCtx* ctx)
 {
     int          ret = 0;
     word32       blockSz = 0;
 #ifndef WOLFSSL_ECIES_OLD
+#ifndef WOLFSSL_ECIES_GEN_IV
     byte         iv[ECC_MAX_IV_SIZE];
+#endif
     word32       pubKeySz = 0;
 #ifdef WOLFSSL_SMALL_STACK
     ecc_key*     peerKey = NULL;
@@ -12965,7 +13085,7 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
     int          ivSz = 0;
     int          offset = 0;       /* in case using msg exchange */
     byte*        encKey = NULL;
-    byte*        encIv = NULL;
+    const byte*  encIv = NULL;
     byte*        macKey = NULL;
 
 
@@ -13021,6 +13141,14 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
         return BAD_PADDING_E;
 
     if (*outSz < (msgSz - digestSz))
+        return BUFFER_E;
+#elif defined(WOLFSSL_ECIES_GEN_IV)
+    if (((msgSz - ivSz - digestSz - pubKeySz) % blockSz) != 0)
+        return BAD_PADDING_E;
+
+    if (msgSz < pubKeySz + ivSz + blockSz + digestSz)
+        return BAD_FUNC_ARG;
+    if (*outSz < (msgSz - ivSz - digestSz - pubKeySz))
         return BUFFER_E;
 #else
     if (((msgSz - digestSz - pubKeySz) % blockSz) != 0)
@@ -13133,6 +13261,12 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
         encKey = keys + offset;
         encIv  = encKey + encKeySz;
         macKey = encKey + encKeySz + ivSz;
+    #elif defined(WOLFSSL_ECIES_GEN_IV)
+        encKey = keys + offset;
+        encIv  = msg;
+        msg   += ivSz;
+        msgSz -= ivSz;
+        macKey = encKey + encKeySz;
     #else
         XMEMSET(iv, 0, ivSz);
         encKey = keys + offset;
@@ -13159,7 +13293,12 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
                     ret = wc_HmacSetKey(hmac, WC_SHA256, macKey,
                                                          WC_SHA256_DIGEST_SIZE);
                     if (ret == 0)
+                    #if !defined(WOLFSSL_ECIES_GEN_IV)
                         ret = wc_HmacUpdate(hmac, msg, msgSz-digestSz);
+                    #else
+                        /* IV is before encrypted message. */
+                        ret = wc_HmacUpdate(hmac, encIv, ivSz+msgSz-digestSz);
+                    #endif
                     if (ret == 0)
                         ret = wc_HmacUpdate(hmac, ctx->macSalt, ctx->macSaltSz);
 
@@ -13236,7 +13375,12 @@ int wc_ecc_decrypt(ecc_key* privKey, ecc_key* pubKey, const byte* msg,
              #endif
                 ret = wc_AesInit(aes, NULL, INVALID_DEVID);
                 if (ret == 0) {
-                    ret = wc_AesSetKey(aes, encKey, encKeySz, encIv,
+                    byte ctr_iv[AES_BLOCK_SIZE];
+                    /* Make a 16 byte IV from the bytes passed in. */
+                    XMEMCPY(ctr_iv, encIv, WOLFSSL_ECIES_GEN_IV_SIZE);
+                    XMEMSET(ctr_iv + WOLFSSL_ECIES_GEN_IV_SIZE, 0,
+                        AES_BLOCK_SIZE - WOLFSSL_ECIES_GEN_IV_SIZE);
+                    ret = wc_AesSetKey(aes, encKey, encKeySz, ctr_iv,
                                                                 AES_ENCRYPTION);
                     if (ret == 0) {
                         ret = wc_AesCtrEncrypt(aes, out, msg, msgSz-digestSz);

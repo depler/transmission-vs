@@ -1,6 +1,6 @@
 /* chacha20_poly1305.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -86,7 +86,7 @@ typedef struct ChaChaPoly_Aead {
  * concatenating a constant value.
  */
 
-WOLFSSL_API
+WOLFSSL_ABI WOLFSSL_API
 int wc_ChaCha20Poly1305_Encrypt(
                 const byte inKey[CHACHA20_POLY1305_AEAD_KEYSIZE],
                 const byte inIV[CHACHA20_POLY1305_AEAD_IV_SIZE],
@@ -95,7 +95,7 @@ int wc_ChaCha20Poly1305_Encrypt(
                 byte* outCiphertext,
                 byte outAuthTag[CHACHA20_POLY1305_AEAD_AUTHTAG_SIZE]);
 
-WOLFSSL_API
+WOLFSSL_ABI WOLFSSL_API
 int wc_ChaCha20Poly1305_Decrypt(
                 const byte inKey[CHACHA20_POLY1305_AEAD_KEYSIZE],
                 const byte inIV[CHACHA20_POLY1305_AEAD_IV_SIZE],

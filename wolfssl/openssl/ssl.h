@@ -1,6 +1,6 @@
 /* ssl.h
  *
- * Copyright (C) 2006-2021 wolfSSL Inc.
+ * Copyright (C) 2006-2022 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -384,6 +384,7 @@ typedef STACK_OF(ACCESS_DESCRIPTION) AUTHORITY_INFO_ACCESS;
 #define SSL_get_keys                    wolfSSL_get_keys
 #define SSL_SESSION_get_master_key      wolfSSL_SESSION_get_master_key
 #define SSL_SESSION_get_master_key_length wolfSSL_SESSION_get_master_key_length
+#define SSL_SESSION_get_max_early_data  wolfSSL_SESSION_get_max_early_data
 
 #if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
     #define SSL_MODE_RELEASE_BUFFERS    0x00000010U
@@ -495,6 +496,7 @@ typedef STACK_OF(ACCESS_DESCRIPTION) AUTHORITY_INFO_ACCESS;
 #define X509_REQ_print                  wolfSSL_X509_print
 #define X509_print_ex                   wolfSSL_X509_print_ex
 #define X509_print_fp                   wolfSSL_X509_print_fp
+#define X509_CRL_print                  wolfSSL_X509_CRL_print
 #define X509_REQ_print_fp               wolfSSL_X509_print_fp
 #define X509_signature_print            wolfSSL_X509_signature_print
 #define X509_get0_signature             wolfSSL_X509_get0_signature
