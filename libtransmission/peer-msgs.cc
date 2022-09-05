@@ -514,113 +514,7 @@ public:
         // TODO -- might need to poke the mgr on startup
     }
 
-    // publishing events
-
-    void publishError(int err)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_ERROR;
-        e.err = err;
-        publish(e);
-    }
-
-    void publishGotBlock(tr_block_index_t block)
-    {
-        auto const loc = torrent->blockLoc(block);
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_BLOCK;
-        e.pieceIndex = loc.piece;
-        e.offset = loc.piece_offset;
-        e.length = torrent->blockSize(block);
-        publish(e);
-    }
-
-    void publishGotRej(struct peer_request const* req)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_REJ;
-        e.pieceIndex = req->index;
-        e.offset = req->offset;
-        e.length = req->length;
-        publish(e);
-    }
-
-    void publishGotChoke()
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_CHOKE;
-        publish(e);
-    }
-
-    void publishClientGotHaveAll()
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_HAVE_ALL;
-        publish(e);
-    }
-
-    void publishClientGotHaveNone()
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_HAVE_NONE;
-        publish(e);
-    }
-
-    void publishClientGotPieceData(uint32_t length)
-    {
-        auto e = tr_peer_event{};
-        e.length = length;
-        e.eventType = TR_PEER_CLIENT_GOT_PIECE_DATA;
-        publish(e);
-    }
-
-    void publishPeerGotPieceData(uint32_t length)
-    {
-        auto e = tr_peer_event{};
-        e.length = length;
-        e.eventType = TR_PEER_PEER_GOT_PIECE_DATA;
-        publish(e);
-    }
-
-    void publishClientGotSuggest(tr_piece_index_t pieceIndex)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_SUGGEST;
-        e.pieceIndex = pieceIndex;
-        publish(e);
-    }
-
-    void publishClientGotPort(tr_port port)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_PORT;
-        e.port = port;
-        publish(e);
-    }
-
-    void publishClientGotAllowedFast(tr_piece_index_t pieceIndex)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_ALLOWED_FAST;
-        e.pieceIndex = pieceIndex;
-        publish(e);
-    }
-
-    void publishClientGotBitfield(tr_bitfield* bitfield)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_BITFIELD;
-        e.bitfield = bitfield;
-        publish(e);
-    }
-
-    void publishClientGotHave(tr_piece_index_t index)
-    {
-        auto e = tr_peer_event{};
-        e.eventType = TR_PEER_CLIENT_GOT_HAVE;
-        e.pieceIndex = index;
-        publish(e);
-    }
+    //
 
     [[nodiscard]] bool isValidRequest(peer_request const& req) const
     {
@@ -666,6 +560,14 @@ public:
     }
 
     void sendPex();
+
+    void publish(tr_peer_event const& peer_event)
+    {
+        if (callback_ != nullptr)
+        {
+            (*callback_)(this, peer_event, callbackData_);
+        }
+    }
 
 private:
     [[nodiscard]] size_t maxAvailableReqs() const
@@ -767,14 +669,6 @@ private:
         }
     }
 
-    void publish(tr_peer_event const& e)
-    {
-        if (callback_ != nullptr)
-        {
-            (*callback_)(this, &e, callbackData_);
-        }
-    }
-
 public:
     /* Whether or not we've choked this peer. */
     bool peer_is_choked_ = true;
@@ -809,12 +703,6 @@ public:
     EncryptionPreference encryption_preference = EncryptionPreference::Unknown;
 
     size_t metadata_size_hint = 0;
-#if 0
-    /* number of pieces we'll allow in our fast set */
-    static auto constexpr MAX_FAST_SET_SIZE = int{ 3 };
-    size_t fastsetSize;
-    tr_piece_index_t fastset[MAX_FAST_SET_SIZE];
-#endif
 
     tr_torrent* const torrent;
 
@@ -936,25 +824,6 @@ static void protocolSendHave(tr_peerMsgsImpl* msgs, tr_piece_index_t index)
     msgs->pokeBatchPeriod(LowPriorityIntervalSecs);
 }
 
-#if 0
-
-static void protocolSendAllowedFast(tr_peerMsgs* msgs, uint32_t pieceIndex)
-{
-    TR_ASSERT(msgs->io->supportsFEXT());
-
-    tr_peerIo* io = msgs->io;
-    struct evbuffer* out = msgs->outMessages;
-
-    evbuffer_add_uint32(io, out, sizeof(uint8_t) + sizeof(uint32_t));
-    evbuffer_add_uint8(io, out, BtPeerMsgs::FextAllowedFast);
-    evbuffer_add_uint32(io, out, pieceIndex);
-
-    logtrace(msgs, "sending Allowed Fast %u...", pieceIndex);
-    msgs->dbgOutMessageLen();
-}
-
-#endif
-
 static void protocolSendChoke(tr_peerMsgsImpl* msgs, bool choke)
 {
     struct evbuffer* out = msgs->outMessages;
@@ -995,89 +864,6 @@ static void protocolSendHaveNone(tr_peerMsgsImpl* msgs)
     msgs->pokeBatchPeriod(ImmediatePriorityIntervalSecs);
 }
 
-/**
-***  ALLOWED FAST SET
-***  For explanation, see http://www.bittorrent.org/beps/bep_0006.html
-**/
-
-#if 0
-
-size_t tr_generateAllowedSet(tr_piece_index_t* setmePieces, size_t desiredSetSize, size_t pieceCount, uint8_t const* infohash,
-    tr_address const* addr)
-{
-    TR_ASSERT(setmePieces != nullptr);
-    TR_ASSERT(desiredSetSize <= pieceCount);
-    TR_ASSERT(desiredSetSize != 0);
-    TR_ASSERT(pieceCount != 0);
-    TR_ASSERT(infohash != nullptr);
-    TR_ASSERT(addr != nullptr);
-
-    size_t setSize = 0;
-
-    if (addr->isIPv4())
-    {
-        uint8_t w[SHA_DIGEST_LENGTH + 4];
-        uint8_t* walk = w;
-        uint8_t x[SHA_DIGEST_LENGTH];
-
-        uint32_t ui32 = ntohl(htonl(addr->addr.addr4.s_addr) & 0xffffff00); /* (1) */
-        memcpy(w, &ui32, sizeof(uint32_t));
-        walk += sizeof(uint32_t);
-        memcpy(walk, infohash, SHA_DIGEST_LENGTH); /* (2) */
-        walk += SHA_DIGEST_LENGTH;
-        tr_sha1(x, w, walk - w, nullptr); /* (3) */
-        TR_ASSERT(sizeof(w) == walk - w);
-
-        while (setSize < desiredSetSize)
-        {
-            for (int i = 0; i < 5 && setSize < desiredSetSize; ++i) /* (4) */
-            {
-                uint32_t j = i * 4; /* (5) */
-                uint32_t y = ntohl(*(uint32_t*)(x + j)); /* (6) */
-                uint32_t index = y % pieceCount; /* (7) */
-                bool found = false;
-
-                for (size_t k = 0; !found && k < setSize; ++k) /* (8) */
-                {
-                    found = setmePieces[k] == index;
-                }
-
-                if (!found)
-                {
-                    setmePieces[setSize++] = index; /* (9) */
-                }
-            }
-
-            tr_sha1(x, x, sizeof(x), nullptr); /* (3) */
-        }
-    }
-
-    return setSize;
-}
-
-static void updateFastSet(tr_peerMsgs*)
-{
-    bool const fext = msgs->io->supportsFEXT();
-    bool const peerIsNeedy = msgs->peer->progress < 0.10;
-
-    if (fext && peerIsNeedy && !msgs->haveFastSet)
-    {
-        tr_info const* inf = &msgs->torrent->info;
-        size_t const numwant = std::min(MAX_FAST_SET_SIZE, inf->pieceCount);
-
-        /* build the fast set */
-        msgs->fastsetSize = tr_generateAllowedSet(msgs->fastset, numwant, inf->pieceCount, inf->hash, msgs->io->address());
-        msgs->haveFastSet = true;
-
-        /* send it to the peer */
-        for (size_t i = 0; i < msgs->fastsetSize; ++i)
-        {
-            protocolSendAllowedFast(msgs, msgs->fastset[i]);
-        }
-    }
-}
-
-#endif
 /**
 ***  INTEREST
 **/
@@ -1314,7 +1100,7 @@ static void parseLtepHandshake(tr_peerMsgsImpl* msgs, uint32_t len)
     if (tr_variantDictFindInt(&val, TR_KEY_p, &i))
     {
         pex.port.setHost(i);
-        msgs->publishClientGotPort(pex.port);
+        msgs->publish(tr_peer_event::GotPort(pex.port));
         logtrace(msgs, fmt::format(FMT_STRING("peer's port is now {:d}"), i));
     }
 
@@ -1710,7 +1496,7 @@ static ReadState readBtPiece(tr_peerMsgsImpl* msgs, size_t inlen, size_t* setme_
     block_buf->resize(old_length + n_to_read);
     msgs->io->readBytes(&((*block_buf)[old_length]), n_to_read);
 
-    msgs->publishClientGotPieceData(n_to_read);
+    msgs->publish(tr_peer_event::GotPieceData(n_to_read));
     *setme_piece_bytes_read += n_to_read;
     logtrace(
         msgs,
@@ -1782,7 +1568,7 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
         logdbg(
             msgs,
             fmt::format(FMT_STRING("bad packet - BT message #{:d} with a length of {:d}"), static_cast<int>(id), msglen));
-        msgs->publishError(EMSGSIZE);
+        msgs->publish(tr_peer_event::GotError(EMSGSIZE));
         return READ_ERR;
     }
 
@@ -1794,7 +1580,7 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
 
         if (!fext)
         {
-            msgs->publishGotChoke();
+            msgs->publish(tr_peer_event::GotChoke());
         }
 
         msgs->update_active(TR_PEER_TO_CLIENT);
@@ -1825,7 +1611,7 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
 
         if (msgs->torrent->hasMetainfo() && ui32 >= msgs->torrent->pieceCount())
         {
-            msgs->publishError(ERANGE);
+            msgs->publish(tr_peer_event::GotError(ERANGE));
             return READ_ERR;
         }
 
@@ -1833,7 +1619,7 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
         if (!msgs->have_.test(ui32))
         {
             msgs->have_.set(ui32);
-            msgs->publishClientGotHave(ui32);
+            msgs->publish(tr_peer_event::GotHave(ui32));
         }
 
         msgs->invalidatePercentDone();
@@ -1846,7 +1632,7 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
             msgs->io->readBytes(std::data(tmp), std::size(tmp));
             msgs->have_ = tr_bitfield{ msgs->torrent->hasMetainfo() ? msgs->torrent->pieceCount() : std::size(tmp) * 8 };
             msgs->have_.setRaw(std::data(tmp), std::size(tmp));
-            msgs->publishClientGotBitfield(&msgs->have_);
+            msgs->publish(tr_peer_event::GotBitfield(&msgs->have_));
             msgs->invalidatePercentDone();
             break;
         }
@@ -1917,11 +1703,11 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
 
         if (fext)
         {
-            msgs->publishClientGotSuggest(ui32);
+            msgs->publish(tr_peer_event::GotSuggest(ui32));
         }
         else
         {
-            msgs->publishError(EMSGSIZE);
+            msgs->publish(tr_peer_event::GotError(EMSGSIZE));
             return READ_ERR;
         }
 
@@ -1933,11 +1719,11 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
 
         if (fext)
         {
-            msgs->publishClientGotAllowedFast(ui32);
+            msgs->publish(tr_peer_event::GotAllowedFast(ui32));
         }
         else
         {
-            msgs->publishError(EMSGSIZE);
+            msgs->publish(tr_peer_event::GotError(EMSGSIZE));
             return READ_ERR;
         }
 
@@ -1949,12 +1735,12 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
         if (fext)
         {
             msgs->have_.setHasAll();
-            msgs->publishClientGotHaveAll();
+            msgs->publish(tr_peer_event::GotHaveAll());
             msgs->invalidatePercentDone();
         }
         else
         {
-            msgs->publishError(EMSGSIZE);
+            msgs->publish(tr_peer_event::GotError(EMSGSIZE));
             return READ_ERR;
         }
 
@@ -1966,12 +1752,12 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
         if (fext)
         {
             msgs->have_.setHasNone();
-            msgs->publishClientGotHaveNone();
+            msgs->publish(tr_peer_event::GotHaveNone());
             msgs->invalidatePercentDone();
         }
         else
         {
-            msgs->publishError(EMSGSIZE);
+            msgs->publish(tr_peer_event::GotError(EMSGSIZE));
             return READ_ERR;
         }
 
@@ -1987,11 +1773,12 @@ static ReadState readBtMessage(tr_peerMsgsImpl* msgs, size_t inlen)
 
             if (fext)
             {
-                msgs->publishGotRej(&r);
+                msgs->publish(
+                    tr_peer_event::GotRejected(msgs->torrent->blockInfo(), msgs->torrent->pieceLoc(r.index, r.offset).block));
             }
             else
             {
-                msgs->publishError(EMSGSIZE);
+                msgs->publish(tr_peer_event::GotError(EMSGSIZE));
                 return READ_ERR;
             }
 
@@ -2057,7 +1844,7 @@ static int clientGotBlock(
 
     msgs->session->cache->writeBlock(tor->id(), block, block_data);
     msgs->blame.set(loc.piece);
-    msgs->publishGotBlock(block);
+    msgs->publish(tr_peer_event::GotBlock(tor->blockInfo(), block));
     return 0;
 }
 
@@ -2067,7 +1854,7 @@ static void didWrite(tr_peerIo* io, size_t bytesWritten, bool wasPieceData, void
 
     if (wasPieceData)
     {
-        msgs->publishPeerGotPieceData(bytesWritten);
+        msgs->publish(tr_peer_event::SentPieceData(bytesWritten));
     }
 
     if (tr_isPeerIo(io) && io->userData != nullptr)
@@ -2418,7 +2205,7 @@ static void gotError(tr_peerIo* /*io*/, short what, void* vmsgs)
             fmt::format(FMT_STRING("libevent got an error! what={:d}, errno={:d} ({:s})"), what, errno, tr_strerror(errno)));
     }
 
-    msgs->publishError(ENOTCONN);
+    msgs->publish(tr_peer_event::GotError(ENOTCONN));
 }
 
 static void sendBitfield(tr_peerMsgsImpl* msgs)

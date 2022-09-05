@@ -124,7 +124,7 @@ std::optional<ParsedAnnounce> parseAnnounceMsg(std::string_view announce)
     {
         // parse `${major}.${minor}`
         auto walk = announce.substr(pos + std::size(key));
-        if (auto const major = tr_parseNum<int>(walk); major && tr_strvStartsWith(walk, '.'))
+        if (auto const major = tr_parseNum<int>(walk, &walk); major && tr_strvStartsWith(walk, '.'))
         {
             ret.major = *major;
         }
@@ -134,7 +134,7 @@ std::optional<ParsedAnnounce> parseAnnounceMsg(std::string_view announce)
         }
 
         walk.remove_prefix(1); // the '.' between major and minor
-        if (auto const minor = tr_parseNum<int>(walk); minor && tr_strvStartsWith(walk, CrLf))
+        if (auto const minor = tr_parseNum<int>(walk, &walk); minor && tr_strvStartsWith(walk, CrLf))
         {
             ret.minor = *minor;
         }
@@ -148,7 +148,7 @@ std::optional<ParsedAnnounce> parseAnnounceMsg(std::string_view announce)
     if (auto const pos = announce.find(key); pos != std::string_view::npos)
     {
         auto walk = announce.substr(pos + std::size(key));
-        if (auto const port = tr_parseNum<uint16_t>(walk); port && tr_strvStartsWith(walk, CrLf))
+        if (auto const port = tr_parseNum<uint16_t>(walk, &walk); port && tr_strvStartsWith(walk, CrLf))
         {
             ret.port = tr_port::fromHost(*port);
         }
@@ -596,11 +596,6 @@ private:
     static auto constexpr TorrentAnnounceIntervalSec = time_t{ 240U }; // how frequently to reannounce the same torrent
     static auto constexpr TtlSameSubnet = int{ 1 };
     static auto constexpr AnnounceScope = int{ TtlSameSubnet }; /**<the maximum scope for LPD datagrams */
-
-    // static auto constexpr TtlSameSite = int{ 32 };
-    // static auto constexpr TtlSameRegion = int{ 64 };
-    // static auto constexpr TtlSameContinent = int{ 128 };
-    // static auto constexpr TtlUnrestricted = int{ 255 };
 };
 
 std::unique_ptr<tr_lpd> tr_lpd::create(
