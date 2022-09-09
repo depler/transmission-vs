@@ -123,7 +123,7 @@ public:
 
     /// SPEED LIMIT
 
-    void setSpeedLimitBps(tr_direction, unsigned int Bps);
+    void setSpeedLimitBps(tr_direction, unsigned int bytes_per_second);
 
     [[nodiscard]] unsigned int speedLimitBps(tr_direction) const;
 
@@ -780,6 +780,8 @@ void tr_ctorSetLabels(tr_ctor* ctor, tr_quark const* labels, size_t n_labels);
 void tr_ctorSetBandwidthPriority(tr_ctor* ctor, tr_priority_t priority);
 tr_priority_t tr_ctorGetBandwidthPriority(tr_ctor const* ctor);
 tr_torrent::labels_t const& tr_ctorGetLabels(tr_ctor const* ctor);
+
+void tr_torrentOnVerifyDone(tr_torrent* tor, bool aborted);
 
 #define tr_logAddCriticalTor(tor, msg) tr_logAddCritical(msg, (tor)->name())
 #define tr_logAddErrorTor(tor, msg) tr_logAddError(msg, (tor)->name())

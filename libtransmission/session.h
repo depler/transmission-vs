@@ -39,6 +39,7 @@
 #include "torrents.h"
 #include "tr-lpd.h"
 #include "web.h"
+#include "verify.h"
 
 enum tr_auto_switch_state_t
 {
@@ -59,6 +60,13 @@ struct BlocklistFile;
 struct struct_utp_context;
 struct tr_announcer;
 struct tr_announcer_udp;
+
+namespace libtransmission::test
+{
+
+class SessionTest;
+
+} // namespace libtransmission::test
 
 struct tr_bindinfo
 {
@@ -698,6 +706,22 @@ public:
         return peer_id_ttl_hours_;
     }
 
+    void verifyRemove(tr_torrent* tor)
+    {
+        if (verifier_)
+        {
+            verifier_->remove(tor);
+        }
+    }
+
+    void verifyAdd(tr_torrent* tor)
+    {
+        if (verifier_)
+        {
+            verifier_->add(tor);
+        }
+    }
+
 private:
     [[nodiscard]] tr_port randomPort() const;
 
@@ -710,6 +734,7 @@ private:
     void closeImplWaitForIdleUdp();
     void closeImplFinish();
 
+    friend class libtransmission::test::SessionTest;
     friend bool tr_blocklistExists(tr_session const* session);
     friend bool tr_sessionGetAntiBruteForceEnabled(tr_session const* session);
     friend bool tr_sessionIsRPCEnabled(tr_session const* session);
@@ -754,7 +779,7 @@ private:
     friend void tr_sessionSetRPCUsername(tr_session* session, char const* username);
     friend void tr_sessionSetRatioLimit(tr_session* session, double desired_ratio);
     friend void tr_sessionSetRatioLimited(tr_session* session, bool is_limited);
-    friend void tr_sessionSetSpeedLimit_Bps(tr_session* session, tr_direction dir, unsigned int Bps);
+    friend void tr_sessionSetSpeedLimit_Bps(tr_session* session, tr_direction dir, unsigned int bytes_per_second);
     friend void tr_sessionSetUTPEnabled(tr_session* session, bool enabled);
 
     static std::recursive_mutex session_mutex_;
@@ -887,6 +912,8 @@ private:
     std::unique_ptr<libtransmission::Timer> save_timer_;
 
     tr_torrents torrents_;
+
+    std::unique_ptr<tr_verify_worker> verifier_ = std::make_unique<tr_verify_worker>();
 
     std::array<std::string, TR_SCRIPT_N_TYPES> scripts_;
 

@@ -155,7 +155,7 @@ static char const* mimetype_guess(std::string_view path)
     return "application/octet-stream";
 }
 
-static evbuffer* make_response(struct evhttp_request* req, tr_rpc_server* server, std::string_view content)
+static evbuffer* make_response(struct evhttp_request* req, tr_rpc_server const* server, std::string_view content)
 {
     auto* const out = evbuffer_new();
 
@@ -202,7 +202,7 @@ static void add_time_header(struct evkeyvalq* headers, char const* key, time_t n
     evhttp_add_header(headers, key, fmt::format("{:%a %b %d %T %Y%n}", fmt::gmtime(now)).c_str());
 }
 
-static void serve_file(struct evhttp_request* req, tr_rpc_server* server, std::string_view filename)
+static void serve_file(struct evhttp_request* req, tr_rpc_server const* server, std::string_view filename)
 {
     if (req->type != EVHTTP_REQ_GET)
     {
@@ -344,7 +344,7 @@ static bool isIPAddressWithOptionalPort(char const* host)
     return evutil_parse_sockaddr_port(host, (struct sockaddr*)&address, &address_len) != -1;
 }
 
-static bool isHostnameAllowed(tr_rpc_server const* server, struct evhttp_request* req)
+static bool isHostnameAllowed(tr_rpc_server const* server, evhttp_request const* req)
 {
     /* If password auth is enabled, any hostname is permitted. */
     if (server->isPasswordEnabled())
@@ -388,7 +388,7 @@ static bool isHostnameAllowed(tr_rpc_server const* server, struct evhttp_request
         [&hostname](auto const& str) { return tr_wildmat(hostname.c_str(), str.c_str()); });
 }
 
-static bool test_session_id(tr_rpc_server* server, evhttp_request const* req)
+static bool test_session_id(tr_rpc_server const* server, evhttp_request const* req)
 {
     char const* const session_id = evhttp_find_header(req->input_headers, TR_RPC_SESSION_ID_HEADER);
     return session_id != nullptr && server->session->sessionId() == session_id;
@@ -892,19 +892,18 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
     , bindAddress(std::make_unique<struct tr_rpc_address>())
     , session{ session_in }
 {
-    auto boolVal = bool{};
     auto i = int64_t{};
     auto sv = std::string_view{};
 
     auto key = TR_KEY_rpc_enabled;
 
-    if (!tr_variantDictFindBool(settings, key, &boolVal))
+    if (auto val = bool{}; !tr_variantDictFindBool(settings, key, &val))
     {
         missing_settings_key(key);
     }
     else
     {
-        this->is_enabled_ = boolVal;
+        this->is_enabled_ = val;
     }
 
     key = TR_KEY_rpc_port;
@@ -935,24 +934,24 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
 
     key = TR_KEY_rpc_whitelist_enabled;
 
-    if (!tr_variantDictFindBool(settings, key, &boolVal))
+    if (auto val = bool{}; !tr_variantDictFindBool(settings, key, &val))
     {
         missing_settings_key(key);
     }
     else
     {
-        this->setWhitelistEnabled(boolVal);
+        this->setWhitelistEnabled(val);
     }
 
     key = TR_KEY_rpc_host_whitelist_enabled;
 
-    if (!tr_variantDictFindBool(settings, key, &boolVal))
+    if (auto val = bool{}; !tr_variantDictFindBool(settings, key, &val))
     {
         missing_settings_key(key);
     }
     else
     {
-        this->isHostWhitelistEnabled = boolVal;
+        this->isHostWhitelistEnabled = val;
     }
 
     key = TR_KEY_rpc_host_whitelist;
@@ -968,13 +967,13 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
 
     key = TR_KEY_rpc_authentication_required;
 
-    if (!tr_variantDictFindBool(settings, key, &boolVal))
+    if (auto val = bool{}; !tr_variantDictFindBool(settings, key, &val))
     {
         missing_settings_key(key);
     }
     else
     {
-        this->setPasswordEnabled(boolVal);
+        this->setPasswordEnabled(val);
     }
 
     key = TR_KEY_rpc_whitelist;
@@ -1012,13 +1011,13 @@ tr_rpc_server::tr_rpc_server(tr_session* session_in, tr_variant* settings)
 
     key = TR_KEY_anti_brute_force_enabled;
 
-    if (!tr_variantDictFindBool(settings, key, &boolVal))
+    if (auto val = bool{}; !tr_variantDictFindBool(settings, key, &val))
     {
         missing_settings_key(key);
     }
     else
     {
-        this->setAntiBruteForceEnabled(boolVal);
+        this->setAntiBruteForceEnabled(val);
     }
 
     key = TR_KEY_anti_brute_force_threshold;

@@ -53,8 +53,8 @@
 using namespace std::literals;
 
 static std::unique_ptr<libtransmission::Timer> dht_timer;
-static unsigned char myid[20];
-static tr_session* session_ = nullptr;
+static std::array<unsigned char, 20> myid;
+static tr_session* my_session = nullptr;
 
 static bool bootstrap_done(tr_session* session, int af)
 {
@@ -117,7 +117,7 @@ static void bootstrap_from_name(char const* name, tr_port port, int af)
 
         nap(15);
 
-        if (bootstrap_done(session_, af))
+        if (bootstrap_done(my_session, af))
         {
             break;
         }
@@ -158,14 +158,14 @@ static void dht_boostrap_from_file(tr_session* session)
         }
         else
         {
-            bootstrap_from_name(addrstr.c_str(), tr_port::fromHost(hport), bootstrap_af(session_));
+            bootstrap_from_name(addrstr.c_str(), tr_port::fromHost(hport), bootstrap_af(my_session));
         }
     }
 }
 
 static void dht_bootstrap(tr_session* session, std::vector<uint8_t> nodes, std::vector<uint8_t> nodes6)
 {
-    if (session_ != session)
+    if (my_session != session)
     {
         return;
     }
@@ -216,7 +216,7 @@ static void dht_bootstrap(tr_session* session, std::vector<uint8_t> nodes, std::
             nap(15);
         }
 
-        if (bootstrap_done(session_, 0))
+        if (bootstrap_done(my_session, 0))
         {
             break;
         }
@@ -247,7 +247,7 @@ static void dht_bootstrap(tr_session* session, std::vector<uint8_t> nodes, std::
                 tr_logAddDebug("Attempting bootstrap from dht.transmissionbt.com");
             }
 
-            bootstrap_from_name("dht.transmissionbt.com", tr_port::fromHost(6881), bootstrap_af(session_));
+            bootstrap_from_name("dht.transmissionbt.com", tr_port::fromHost(6881), bootstrap_af(my_session));
         }
     }
 
@@ -256,7 +256,7 @@ static void dht_bootstrap(tr_session* session, std::vector<uint8_t> nodes, std::
 
 int tr_dhtInit(tr_session* ss)
 {
-    if (session_ != nullptr) /* already initialized */
+    if (my_session != nullptr) /* already initialized */
     {
         return -1;
     }
@@ -281,7 +281,7 @@ int tr_dhtInit(tr_session* ss)
         have_id = tr_variantDictFindStrView(&benc, TR_KEY_id, &sv);
         if (have_id && std::size(sv) == 20)
         {
-            std::copy(std::begin(sv), std::end(sv), myid);
+            std::copy(std::begin(sv), std::end(sv), std::data(myid));
         }
 
         size_t raw_len = 0U;
@@ -309,22 +309,22 @@ int tr_dhtInit(tr_session* ss)
         /* Note that DHT ids need to be distributed uniformly,
          * so it should be something truly random. */
         tr_logAddTrace("Generating new id");
-        tr_rand_buffer(myid, 20);
+        tr_rand_buffer(std::data(myid), std::size(myid));
     }
 
-    if (int const rc = dht_init(ss->udp_socket, ss->udp6_socket, myid, nullptr); rc < 0)
+    if (int const rc = dht_init(ss->udp_socket, ss->udp6_socket, std::data(myid), nullptr); rc < 0)
     {
         auto const errcode = errno;
         tr_logAddDebug(fmt::format("DHT initialization failed: {} ({})", tr_strerror(errcode), errcode));
-        session_ = nullptr;
+        my_session = nullptr;
         return -1;
     }
 
-    session_ = ss;
+    my_session = ss;
 
-    std::thread(dht_bootstrap, session_, nodes, nodes6).detach();
+    std::thread(dht_bootstrap, my_session, nodes, nodes6).detach();
 
-    dht_timer = session_->timerMaker().create([]() { tr_dhtCallback(nullptr, 0, nullptr, 0, session_); });
+    dht_timer = my_session->timerMaker().create([]() { tr_dhtCallback(nullptr, 0, nullptr, 0, my_session); });
     auto const random_percent = tr_rand_int_weak(1000) / 1000.0;
     static auto constexpr MinInterval = 10ms;
     static auto constexpr MaxInterval = 1s;
@@ -338,7 +338,7 @@ int tr_dhtInit(tr_session* ss)
 
 void tr_dhtUninit(tr_session* ss)
 {
-    if (session_ != ss)
+    if (my_session != ss)
     {
         return;
     }
@@ -371,7 +371,7 @@ void tr_dhtUninit(tr_session* ss)
 
         tr_variant benc;
         tr_variantInitDict(&benc, 3);
-        tr_variantDictAddRaw(&benc, TR_KEY_id, myid, 20);
+        tr_variantDictAddRaw(&benc, TR_KEY_id, std::data(myid), std::size(myid));
 
         if (num > 0)
         {
@@ -411,12 +411,12 @@ void tr_dhtUninit(tr_session* ss)
     dht_uninit();
     tr_logAddTrace("Done uninitializing DHT");
 
-    session_ = nullptr;
+    my_session = nullptr;
 }
 
 bool tr_dhtEnabled(tr_session const* ss)
 {
-    return ss != nullptr && ss == session_;
+    return ss != nullptr && ss == my_session;
 }
 
 struct getstatus_closure
@@ -483,7 +483,7 @@ int tr_dhtStatus(tr_session* session, int af, int* setme_node_count)
     return closure.status;
 }
 
-tr_port tr_dhtPort(tr_session* ss)
+tr_port tr_dhtPort(tr_session const* ss)
 {
     return tr_dhtEnabled(ss) ? ss->udp_port : tr_port{};
 }
@@ -558,8 +558,8 @@ static void callback(void* /*ignore*/, int event, unsigned char const* info_hash
 {
     auto hash = tr_sha1_digest_t{};
     std::copy_n(reinterpret_cast<std::byte const*>(info_hash), std::size(hash), std::data(hash));
-    auto const lock = session_->unique_lock();
-    auto* const tor = session_->torrents().get(hash);
+    auto const lock = my_session->unique_lock();
+    auto* const tor = my_session->torrents().get(hash);
 
     if (event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6)
     {
@@ -624,7 +624,7 @@ static AnnounceResult tr_dhtAnnounce(tr_torrent* tor, int af, bool announce)
     }
 
     auto const* dht_hash = reinterpret_cast<unsigned char const*>(std::data(tor->infoHash()));
-    auto const hport = announce ? session_->peerPort().host() : 0;
+    auto const hport = announce ? my_session->peerPort().host() : 0;
     int const rc = dht_search(dht_hash, hport, af, callback, nullptr);
     if (rc < 0)
     {
@@ -684,7 +684,7 @@ void tr_dhtCallback(unsigned char* buf, int buflen, struct sockaddr* from, sockl
 {
     TR_ASSERT(sv != nullptr);
 
-    if (sv != session_)
+    if (sv != my_session)
     {
         return;
     }
