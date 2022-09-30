@@ -56,6 +56,7 @@ struct evdns_base;
 class tr_rpc_server;
 class tr_web;
 class tr_lpd;
+class tr_port_forwarding;
 struct BlocklistFile;
 struct struct_utp_context;
 struct tr_announcer;
@@ -478,13 +479,55 @@ public:
 
     struct tr_event_handle* events = nullptr;
 
-    /* The UDP sockets used for the DHT and uTP. */
-    tr_port udp_port;
-    tr_socket_t udp_socket = TR_BAD_SOCKET;
-    tr_socket_t udp6_socket = TR_BAD_SOCKET;
-    unsigned char* udp6_bound = nullptr;
-    struct event* udp_event = nullptr;
-    struct event* udp6_event = nullptr;
+    // UDP connectivity used for the DHT and uTP
+    class tr_udp_core
+    {
+    public:
+        tr_udp_core(tr_session& session);
+
+        ~tr_udp_core();
+
+        void dhtUninit();
+        void dhtUpkeep();
+
+        void set_socket_buffers();
+
+        void set_socket_tos()
+        {
+            session_.setSocketTOS(udp_socket_, TR_AF_INET);
+            session_.setSocketTOS(udp6_socket_, TR_AF_INET6);
+        }
+
+        void sendto(void const* buf, size_t buflen, struct sockaddr const* to, socklen_t const tolen) const;
+
+        [[nodiscard]] constexpr auto port() const noexcept
+        {
+            return udp_port_;
+        }
+
+        [[nodiscard]] constexpr auto udp_socket() const noexcept
+        {
+            return udp_socket_;
+        }
+
+        [[nodiscard]] constexpr auto udp6_socket() const noexcept
+        {
+            return udp6_socket_;
+        }
+
+    private:
+        tr_port udp_port_ = {};
+        tr_session& session_;
+        struct event* udp_event_ = nullptr;
+        struct event* udp6_event_ = nullptr;
+        std::optional<in6_addr> udp6_bound_;
+        tr_socket_t udp_socket_ = TR_BAD_SOCKET;
+        tr_socket_t udp6_socket_ = TR_BAD_SOCKET;
+
+        void rebind_ipv6(bool);
+    };
+
+    std::unique_ptr<tr_udp_core> udp_core_;
 
     /* The open port on the local machine for incoming peer requests */
     tr_port private_peer_port;
@@ -508,7 +551,7 @@ public:
     }
 
     struct tr_peerMgr* peerMgr = nullptr;
-    struct tr_shared* shared = nullptr;
+    std::unique_ptr<tr_port_forwarding> port_forwarding_;
 
     std::unique_ptr<Cache> cache;
 
@@ -822,7 +865,7 @@ private:
     uint16_t peer_limit_ = 200;
     uint16_t peer_limit_per_torrent_ = 50;
 
-    uint16_t idle_limit_minutes_;
+    uint16_t idle_limit_minutes_ = 0;
 
     uint16_t upload_slots_per_torrent_ = 8;
 
@@ -946,7 +989,7 @@ private:
     tr_torrent_completeness_func completeness_func_ = nullptr;
     void* completeness_func_user_data_ = nullptr;
 
-    std::array<bool, TR_SCRIPT_N_TYPES> scripts_enabled_;
+    std::array<bool, TR_SCRIPT_N_TYPES> scripts_enabled_ = {};
     bool blocklist_enabled_ = false;
     bool incomplete_dir_enabled_ = false;
 
@@ -958,6 +1001,10 @@ private:
 public:
     struct struct_utp_context* utp_context = nullptr;
     std::unique_ptr<libtransmission::Timer> utp_timer;
+
+    // These UDP announcer quirks are tightly hooked with session
+    bool tau_handle_message(uint8_t const* msg, size_t msglen) const;
+    void tau_sendto(struct evutil_addrinfo* ai, tr_port port, void const* buf, size_t buflen) const;
 };
 
 constexpr bool tr_isPriority(tr_priority_t p)

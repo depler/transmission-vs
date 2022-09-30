@@ -53,10 +53,8 @@
 #include "timer-ev.h"
 #include "torrent.h"
 #include "tr-assert.h"
-#include "tr-dht.h" /* tr_dhtUpkeep() */
 #include "tr-lpd.h"
 #include "tr-strbuf.h"
-#include "tr-udp.h"
 #include "tr-utp.h"
 #include "trevent.h"
 #include "utils.h"
@@ -632,8 +630,6 @@ tr_session* tr_sessionInit(char const* config_dir, bool message_queueing_enabled
 
     /* initialize the bare skeleton of the session object */
     auto* const session = new tr_session{ config_dir };
-    session->udp_socket = TR_BAD_SOCKET;
-    session->udp6_socket = TR_BAD_SOCKET;
     session->cache = std::make_unique<Cache>(session->torrents(), 1024 * 1024 * 2);
     bandwidthGroupRead(session, config_dir);
 
@@ -676,7 +672,7 @@ void tr_session::onNowTimer()
 
     // tr_session upkeep tasks to perform once per second
     tr_timeUpdate(time(nullptr));
-    tr_dhtUpkeep(this);
+    udp_core_->dhtUpkeep();
     if (turtle.isClockEnabled)
     {
         turtleCheckClock(this, &this->turtle);
@@ -735,7 +731,7 @@ void tr_session::initImpl(init_data& data)
 
     this->peerMgr = tr_peerMgrNew(this);
 
-    this->shared = tr_sharedInit(*this);
+    this->port_forwarding_ = tr_port_forwarding::create(*this);
 
     /**
     ***  Blocklist
@@ -750,7 +746,7 @@ void tr_session::initImpl(init_data& data)
 
     tr_sessionSet(this, &settings);
 
-    tr_udpInit(this);
+    this->udp_core_ = std::make_unique<tr_session::tr_udp_core>(*this);
 
     this->web = tr_web::create(this->web_mediator_);
 
@@ -1266,7 +1262,7 @@ static void peerPortChanged(tr_session* const session)
         open_incoming_peer_port(session);
     }
 
-    tr_sharedPortChanged(*session);
+    session->port_forwarding_->portChanged();
 
     for (auto* const tor : session->torrents())
     {
@@ -1316,11 +1312,11 @@ bool tr_sessionGetPeerPortRandomOnStart(tr_session const* session)
     return session->isPortRandom();
 }
 
-tr_port_forwarding tr_sessionGetPortForwarding(tr_session const* session)
+tr_port_forwarding_state tr_sessionGetPortForwarding(tr_session const* session)
 {
     TR_ASSERT(session != nullptr);
 
-    return tr_port_forwarding(tr_sharedTraversalStatus(session->shared));
+    return session->port_forwarding_->state();
 }
 
 /***
@@ -1810,13 +1806,13 @@ void tr_session::closeImplStart()
 
     lpd_.reset();
 
-    tr_dhtUninit(this);
+    udp_core_->dhtUninit();
 
     save_timer_.reset();
     now_timer_.reset();
 
     verifier_.reset();
-    tr_sharedClose(*this);
+    port_forwarding_.reset();
 
     close_incoming_peer_port(this);
     this->rpc_server_.reset();
@@ -1879,7 +1875,7 @@ void tr_session::closeImplFinish()
 
     /* we had to wait until UDP trackers were closed before closing these: */
     tr_tracker_udp_close(this);
-    tr_udpUninit(this);
+    this->udp_core_.reset();
 
     stats().saveIfDirty();
     tr_peerMgrFree(peerMgr);
@@ -1914,17 +1910,17 @@ void tr_sessionClose(tr_session* session)
         tr_wait_msec(10);
     }
 
-    /* "shared" and "tracker" have live sockets,
+    /* "port_forwarding" and "tracker" have live sockets,
      * so we need to keep the transmission thread alive
      * for a bit while they tell the router & tracker
      * that we're closing now */
-    while ((session->shared != nullptr || !session->web->isClosed() || session->announcer != nullptr ||
+    while ((session->port_forwarding_ || !session->web->isClosed() || session->announcer != nullptr ||
             session->announcer_udp != nullptr) &&
            !deadlineReached(deadline))
     {
         tr_logAddTrace(fmt::format(
             "waiting on port unmap ({}) or announcer ({})... now {} deadline {}",
-            fmt::ptr(session->shared),
+            fmt::ptr(session->port_forwarding_.get()),
             fmt::ptr(session->announcer),
             time(nullptr),
             deadline));
@@ -2016,8 +2012,7 @@ static void sessionLoadTorrents(struct sessionLoadTorrentsData* const data)
 
 size_t tr_sessionLoadTorrents(tr_session* session, tr_ctor* ctor)
 {
-    struct sessionLoadTorrentsData data;
-
+    auto data = sessionLoadTorrentsData{};
     data.session = session;
     data.ctor = ctor;
     data.done = false;
@@ -2081,9 +2076,9 @@ void tr_sessionSetDHTEnabled(tr_session* session, bool enabled)
         session,
         [session, enabled]()
         {
-            tr_udpUninit(session);
+            session->udp_core_.reset();
             session->is_dht_enabled_ = enabled;
-            tr_udpInit(session);
+            session->udp_core_ = std::make_unique<tr_session::tr_udp_core>(*session);
         });
 }
 
@@ -2115,21 +2110,9 @@ void tr_sessionSetUTPEnabled(tr_session* session, bool enabled)
     {
         return;
     }
-    tr_runInEventThread(
-        session,
-        [session, enabled]()
-        {
-            session->is_utp_enabled_ = enabled;
-            tr_udpSetSocketBuffers(session);
-            tr_udpSetSocketTOS(session);
-            // But don't call tr_utpClose --
-            // see reset_timer in tr-utp.c for an explanation.
-        });
-}
 
-/***
-****
-***/
+    session->is_utp_enabled_ = enabled;
+}
 
 void tr_sessionSetLPDEnabled(tr_session* session, bool enabled)
 {
@@ -2235,14 +2218,14 @@ tr_bandwidth& tr_session::getBandwidthGroup(std::string_view name)
 
 void tr_sessionSetPortForwardingEnabled(tr_session* session, bool enabled)
 {
-    tr_runInEventThread(session, tr_sharedTraversalEnable, session->shared, enabled);
+    tr_runInEventThread(session, [session, enabled]() { session->port_forwarding_->setEnabled(enabled); });
 }
 
 bool tr_sessionIsPortForwardingEnabled(tr_session const* session)
 {
     TR_ASSERT(session != nullptr);
 
-    return tr_sharedTraversalIsEnabled(session->shared);
+    return session->port_forwarding_->isEnabled();
 }
 
 /***

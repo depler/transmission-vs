@@ -312,12 +312,12 @@ struct tr_peer_socket tr_netOpenPeerSocket(tr_session* session, tr_address const
         }
     }
 
-    struct sockaddr_storage sock;
+    auto sock = sockaddr_storage{};
     socklen_t const addrlen = setup_sockaddr(addr, port, &sock);
 
     // set source address
     auto const [source_addr, is_default_addr] = session->publicAddress(addr->type);
-    struct sockaddr_storage source_sock;
+    auto source_sock = sockaddr_storage{};
     socklen_t const sourcelen = setup_sockaddr(&source_addr, {}, &source_sock);
 
     if (bind(s, (struct sockaddr*)&source_sock, sourcelen) == -1)
@@ -372,7 +372,7 @@ struct tr_peer_socket tr_netOpenPeerUTPSocket(
 
     if (session->utp_context != nullptr && tr_address_is_valid_for_peers(addr, port))
     {
-        struct sockaddr_storage ss;
+        auto ss = sockaddr_storage{};
         socklen_t const sslen = setup_sockaddr(addr, port, &ss);
         auto* const socket = utp_create_socket(session->utp_context);
 
@@ -420,7 +420,7 @@ static tr_socket_t tr_netBindTCPImpl(tr_address const* addr, tr_port port, bool 
     TR_ASSERT(tr_address_is_valid(addr));
 
     static auto constexpr Domains = std::array<int, NUM_TR_AF_INET_TYPES>{ AF_INET, AF_INET6 };
-    struct sockaddr_storage sock;
+    auto sock = sockaddr_storage{};
 
     auto const fd = socket(Domains[addr->type], SOCK_STREAM, 0);
     if (fd == TR_BAD_SOCKET)
@@ -546,7 +546,7 @@ tr_socket_t tr_netAccept(tr_session* session, tr_socket_t listening_sockfd, tr_a
     TR_ASSERT(port != nullptr);
 
     // accept the incoming connection
-    struct sockaddr_storage sock;
+    auto sock = sockaddr_storage{};
     socklen_t len = sizeof(struct sockaddr_storage);
     auto const sockfd = accept(listening_sockfd, (struct sockaddr*)&sock, &len);
     if (sockfd == TR_BAD_SOCKET)
@@ -638,10 +638,10 @@ static int global_unicast_address(struct sockaddr_storage* ss)
 
 static int tr_globalAddress(int af, void* addr, int* addr_len)
 {
-    struct sockaddr_storage ss;
+    auto ss = sockaddr_storage{};
     socklen_t sslen = sizeof(ss);
-    struct sockaddr_in sin;
-    struct sockaddr_in6 sin6;
+    auto sin = sockaddr_in{};
+    auto sin6 = sockaddr_in6{};
     struct sockaddr const* sa = nullptr;
     socklen_t salen = 0;
 
@@ -709,44 +709,43 @@ static int tr_globalAddress(int af, void* addr, int* addr_len)
 }
 
 /* Return our global IPv6 address, with caching. */
-unsigned char const* tr_globalIPv6(tr_session const* session)
+std::optional<in6_addr> tr_globalIPv6(tr_session const* session)
 {
-    static auto ipv6 = std::array<unsigned char, 16>{};
+    static auto ipv6 = in6_addr{};
     static time_t last_time = 0;
     static bool have_ipv6 = false;
 
     /* Re-check every half hour */
     if (auto const now = tr_time(); last_time < now - 1800)
     {
-        int addrlen = 16;
-        int const rc = tr_globalAddress(AF_INET6, std::data(ipv6), &addrlen);
-        have_ipv6 = rc >= 0 && addrlen == 16;
+        int addrlen = sizeof(ipv6);
+        int const rc = tr_globalAddress(AF_INET6, &ipv6, &addrlen);
+        have_ipv6 = rc >= 0 && addrlen == sizeof(ipv6);
         last_time = now;
     }
 
     if (!have_ipv6)
     {
-        return nullptr; /* No IPv6 address at all. */
+        return {}; // no IPv6 address at all
     }
 
-    /* Return the default address.
-     * This is useful for checking for connectivity in general. */
+    // Return the default address.
+    // This is useful for checking for connectivity in general.
     if (session == nullptr)
     {
-        return std::data(ipv6);
+        return ipv6;
     }
 
-    /* We have some sort of address, now make sure that we return
-       our bound address if non-default. */
-
+    // We have some sort of address.
+    // Now make sure that we return our bound address if non-default.
     auto const [ipv6_bindaddr, is_default] = session->publicAddress(TR_AF_INET6);
     if (!is_default)
     {
-        /* Explicitly bound. Return that address. */
-        memcpy(std::data(ipv6), ipv6_bindaddr.addr.addr6.s6_addr, 16);
+        // return this explicitly-bound address
+        ipv6 = ipv6_bindaddr.addr.addr6;
     }
 
-    return std::data(ipv6);
+    return ipv6;
 }
 
 /***

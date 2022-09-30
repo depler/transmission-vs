@@ -21,6 +21,7 @@
 #include <cerrno>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #ifdef _WIN32
@@ -245,4 +246,4 @@ void tr_netSetTOS(tr_socket_t sock, int tos, tr_address_type type);
  */
 [[nodiscard]] std::string tr_net_strerror(int err);
 
-unsigned char const* tr_globalIPv6(tr_session const* session);
+[[nodiscard]] std::optional<in6_addr> tr_globalIPv6(tr_session const* session);

@@ -322,7 +322,6 @@
     <ClCompile Include="libtransmission\log.cc" />
     <ClCompile Include="libtransmission\magnet-metainfo.cc" />
     <ClCompile Include="libtransmission\makemeta.cc" />
-    <ClCompile Include="libtransmission\natpmp.cc" />
     <ClCompile Include="libtransmission\net.cc" />
     <ClCompile Include="libtransmission\open-files.cc" />
     <ClCompile Include="libtransmission\peer-io.cc" />
@@ -333,6 +332,8 @@
     <ClCompile Include="libtransmission\peer-msgs.cc" />
     <ClCompile Include="libtransmission\platform-quota.cc" />
     <ClCompile Include="libtransmission\platform.cc" />
+    <ClCompile Include="libtransmission\port-forwarding-natpmp.cc" />
+    <ClCompile Include="libtransmission\port-forwarding-upnp.cc" />
     <ClCompile Include="libtransmission\port-forwarding.cc" />
     <ClCompile Include="libtransmission\quark.cc" />
     <ClCompile Include="libtransmission\resume.cc" />
@@ -356,7 +357,6 @@
     <ClCompile Include="libtransmission\tr-udp.cc" />
     <ClCompile Include="libtransmission\tr-utp.cc" />
     <ClCompile Include="libtransmission\trevent.cc" />
-    <ClCompile Include="libtransmission\upnp.cc" />
     <ClCompile Include="libtransmission\utils.cc" />
     <ClCompile Include="libtransmission\variant-benc.cc" />
     <ClCompile Include="libtransmission\variant-json.cc" />
@@ -710,7 +710,6 @@
     <ClInclude Include="libtransmission\magnet-metainfo.h" />
     <ClInclude Include="libtransmission\makemeta.h" />
     <ClInclude Include="libtransmission\mime-types.h" />
-    <ClInclude Include="libtransmission\natpmp_local.h" />
     <ClInclude Include="libtransmission\net.h" />
     <ClInclude Include="libtransmission\open-files.h" />
     <ClInclude Include="libtransmission\peer-common.h" />
@@ -723,6 +722,8 @@
     <ClInclude Include="libtransmission\peer-socket.h" />
     <ClInclude Include="libtransmission\platform-quota.h" />
     <ClInclude Include="libtransmission\platform.h" />
+    <ClInclude Include="libtransmission\port-forwarding-natpmp.h" />
+    <ClInclude Include="libtransmission\port-forwarding-upnp.h" />
     <ClInclude Include="libtransmission\port-forwarding.h" />
     <ClInclude Include="libtransmission\quark.h" />
     <ClInclude Include="libtransmission\resume.h" />
@@ -747,11 +748,9 @@
     <ClInclude Include="libtransmission\tr-macros.h" />
     <ClInclude Include="libtransmission\tr-popcount.h" />
     <ClInclude Include="libtransmission\tr-strbuf.h" />
-    <ClInclude Include="libtransmission\tr-udp.h" />
     <ClInclude Include="libtransmission\tr-utp.h" />
     <ClInclude Include="libtransmission\transmission.h" />
     <ClInclude Include="libtransmission\trevent.h" />
-    <ClInclude Include="libtransmission\upnp.h" />
     <ClInclude Include="libtransmission\utils.h" />
     <ClInclude Include="libtransmission\variant-common.h" />
     <ClInclude Include="libtransmission\variant.h" />
