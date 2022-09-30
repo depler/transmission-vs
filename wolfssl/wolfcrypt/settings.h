@@ -1935,7 +1935,16 @@ extern void uITRON4_free(void *p) ;
 /* user can specify what curves they want with ECC_USER_CURVES otherwise
  * all curves are on by default for now */
 #ifndef ECC_USER_CURVES
-    #if !defined(WOLFSSL_SP_MATH) && !defined(HAVE_ALL_CURVES)
+    #ifdef WOLFSSL_SP_MATH
+        /* for single precision math only make sure the enabled key sizes are
+         * included in the ECC curve table */
+        #if defined(WOLFSSL_SP_384) && !defined(HAVE_ECC384)
+            #define HAVE_ECC384
+        #endif
+        #if defined(WOLFSSL_SP_521) && !defined(HAVE_ECC521)
+            #define HAVE_ECC521
+        #endif
+    #elif !defined(HAVE_ALL_CURVES)
         #define HAVE_ALL_CURVES
     #endif
 #endif
@@ -2241,19 +2250,19 @@ extern void uITRON4_free(void *p) ;
 
 /* Asynchronous Crypto */
 #ifdef WOLFSSL_ASYNC_CRYPT
+    #if !defined(HAVE_CAVIUM) && !defined(HAVE_INTEL_QA) && \
+        !defined(WOLFSSL_ASYNC_CRYPT_SW)
+        #error No async backend defined with WOLFSSL_ASYNC_CRYPT!
+    #endif
+
     /* Make sure wolf events are enabled */
     #undef HAVE_WOLF_EVENT
     #define HAVE_WOLF_EVENT
 
-    #ifdef WOLFSSL_ASYNC_CRYPT_TEST
+    #ifdef WOLFSSL_ASYNC_CRYPT_SW
         #define WC_ASYNC_DEV_SIZE 168
     #else
         #define WC_ASYNC_DEV_SIZE 336
-    #endif
-
-    #if !defined(HAVE_CAVIUM) && !defined(HAVE_INTEL_QA) && \
-        !defined(WOLFSSL_ASYNC_CRYPT_TEST)
-        #error No async hardware defined with WOLFSSL_ASYNC_CRYPT!
     #endif
 
     /* Enable ECC_CACHE_CURVE for ASYNC */
@@ -2637,6 +2646,13 @@ extern void uITRON4_free(void *p) ;
     #undef WOLFSSL_TLS13
 #endif
 
+/* FIPS v2 does not support WOLFSSL_PSS_LONG_SALT */
+#if FIPS_VERSION_EQ(2,0)
+    #ifdef WOLFSSL_PSS_LONG_SALT
+        #undef WOLFSSL_PSS_LONG_SALT
+    #endif
+#endif
+
 /* For FIPSv2 make sure the ECDSA encoding allows extra bytes
  * but make sure users consider enabling it */
 #if !defined(NO_STRICT_ECDSA_LEN) && FIPS_VERSION_GE(2,0)
@@ -2715,12 +2731,17 @@ extern void uITRON4_free(void *p) ;
     #endif
 #endif
 
+#ifdef WOLFSSL_HAVE_KYBER
+#define HAVE_PQC
+#endif
+
 /* Enable Post-Quantum Cryptography if we have liboqs from the OpenQuantumSafe
  * group */
 #ifdef HAVE_LIBOQS
 #define HAVE_PQC
 #define HAVE_FALCON
 #define HAVE_DILITHIUM
+#define HAVE_SPHINCS
 #define HAVE_KYBER
 #endif
 
@@ -2729,7 +2750,8 @@ extern void uITRON4_free(void *p) ;
 #define HAVE_KYBER
 #endif
 
-#if defined(HAVE_PQC) && !defined(HAVE_LIBOQS) && !defined(HAVE_PQM4)
+#if defined(HAVE_PQC) && !defined(HAVE_LIBOQS) && !defined(HAVE_PQM4) && \
+    !defined(WOLFSSL_HAVE_KYBER)
 #error Please do not define HAVE_PQC yourself.
 #endif
 
@@ -2744,14 +2766,13 @@ extern void uITRON4_free(void *p) ;
 
 /* Are we using an external private key store like:
  *     PKCS11 / HSM / crypto callback / PK callback */
-#if !defined(WOLF_PRIVATE_KEY_ID) && \
-    (defined(HAVE_PKCS11) || defined(HAVE_PK_CALLBACKS) || \
-     defined(WOLF_CRYPTO_CB) || defined(WOLFSSL_KCAPI))
-     /* Enables support for using wolfSSL_CTX_use_PrivateKey_Id and
-      *   wolfSSL_CTX_use_PrivateKey_Label */
-    #define WOLF_PRIVATE_KEY_ID
+#if !defined(WOLF_PRIVATE_KEY_ID) && !defined(NO_WOLF_PRIVATE_KEY_ID) && \
+        (defined(HAVE_PKCS11) || defined(HAVE_PK_CALLBACKS) || \
+         defined(WOLF_CRYPTO_CB) || defined(WOLFSSL_KCAPI))
+         /* Enables support for using wolfSSL_CTX_use_PrivateKey_Id and
+          *   wolfSSL_CTX_use_PrivateKey_Label */
+        #define WOLF_PRIVATE_KEY_ID
 #endif
-
 
 /* With titan cache size there is too many sessions to fit with the default
  * multiplier of 8 */
@@ -2759,8 +2780,9 @@ extern void uITRON4_free(void *p) ;
     #define NO_SESSION_CACHE_REF
 #endif
 
-/* DTLS v1.3 requires 64-bit number wrappers */
-#if defined(WOLFSSL_DTLS13) && !defined(WOLFSSL_W64_WRAPPER)
+/* (D)TLS v1.3 requires 64-bit number wrappers */
+#if defined(WOLFSSL_TLS13) || defined(WOLFSSL_DTLS_DROP_STATS)
+    #undef WOLFSSL_W64_WRAPPER
     #define WOLFSSL_W64_WRAPPER
 #endif
 
@@ -2791,6 +2813,23 @@ extern void uITRON4_free(void *p) ;
 
     #undef  WOLFSSL_RSA_KEY_CHECK
     #define WOLFSSL_RSA_KEY_CHECK
+#endif
+
+/* SHAKE - Not allowed in FIPS */
+#if defined(WOLFSSL_SHA3) && !defined(HAVE_SELFTEST) && !defined(HAVE_FIPS)
+    #ifndef WOLFSSL_NO_SHAKE128
+        #undef  WOLFSSL_SHAKE128
+        #define WOLFSSL_SHAKE128
+    #endif
+    #ifndef WOLFSSL_NO_SHAKE256
+        #undef  WOLFSSL_SHAKE256
+        #define WOLFSSL_SHAKE256
+    #endif
+#else
+    #undef  WOLFSSL_NO_SHAKE128
+    #define WOLFSSL_NO_SHAKE128
+    #undef  WOLFSSL_NO_SHAKE256
+    #define WOLFSSL_NO_SHAKE256
 #endif
 
 

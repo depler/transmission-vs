@@ -788,7 +788,7 @@ typedef struct w64wrapper {
 
         #if defined(WOLFSSL_CERT_EXT) || defined(HAVE_OCSP) || \
             defined(HAVE_CRL_IO) || defined(HAVE_HTTP_CLIENT) || \
-            !defined(NO_CRYPT_BENCHMARK)
+            !defined(NO_CRYPT_BENCHMARK) || defined(OPENSSL_EXTRA)
 
             #ifndef XATOI /* if custom XATOI is not already defined */
                 #include <stdlib.h>
@@ -945,6 +945,7 @@ typedef struct w64wrapper {
         DYNAMIC_TYPE_FALCON       = 95,
         DYNAMIC_TYPE_SESSION      = 96,
         DYNAMIC_TYPE_DILITHIUM    = 97,
+        DYNAMIC_TYPE_SPHINCS      = 98,
         DYNAMIC_TYPE_SNIFFER_SERVER     = 1000,
         DYNAMIC_TYPE_SNIFFER_SESSION    = 1001,
         DYNAMIC_TYPE_SNIFFER_PB         = 1002,
@@ -1010,9 +1011,6 @@ typedef struct w64wrapper {
         #ifndef WOLFSSL_NOSHA512_256
             #define WOLFSSL_NOSHA512_256
         #endif
-        #ifndef WOLFSSL_NO_SHAKE256
-            #define WOLFSSL_NO_SHAKE256
-        #endif
     #else
         WC_HASH_TYPE_NONE = 0,
         WC_HASH_TYPE_MD2 = 1,
@@ -1030,25 +1028,27 @@ typedef struct w64wrapper {
         WC_HASH_TYPE_SHA3_512 = 13,
         WC_HASH_TYPE_BLAKE2B = 14,
         WC_HASH_TYPE_BLAKE2S = 15,
-#define _WC_HASH_TYPE_MAX WC_HASH_TYPE_BLAKE2S
+        #define _WC_HASH_TYPE_MAX WC_HASH_TYPE_BLAKE2S
         #ifndef WOLFSSL_NOSHA512_224
             WC_HASH_TYPE_SHA512_224 = 16,
-#undef _WC_HASH_TYPE_MAX
-#define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHA512_224
+            #undef _WC_HASH_TYPE_MAX
+            #define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHA512_224
         #endif
         #ifndef WOLFSSL_NOSHA512_256
             WC_HASH_TYPE_SHA512_256 = 17,
-#undef _WC_HASH_TYPE_MAX
-#define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHA512_256
+            #undef _WC_HASH_TYPE_MAX
+            #define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHA512_256
         #endif
-        #ifndef WOLFSSL_NO_SHAKE256
+        #ifdef WOLFSSL_SHAKE128
             WC_HASH_TYPE_SHAKE128 = 18,
+        #endif
+        #ifdef WOLFSSL_SHAKE256
             WC_HASH_TYPE_SHAKE256 = 19,
-#undef _WC_HASH_TYPE_MAX
-#define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHAKE256
+            #undef _WC_HASH_TYPE_MAX
+            #define _WC_HASH_TYPE_MAX WC_HASH_TYPE_SHAKE256
         #endif
         WC_HASH_TYPE_MAX = _WC_HASH_TYPE_MAX
-#undef _WC_HASH_TYPE_MAX
+        #undef _WC_HASH_TYPE_MAX
 
     #endif /* HAVE_SELFTEST */
     };

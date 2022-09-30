@@ -764,9 +764,12 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define XTIME(tl)       (0)
     #define XGMTIME(c, t)   rtpsys_gmtime((c))
 
-#elif defined(WOLFSSL_DEOS)
+#elif defined(WOLFSSL_DEOS) || defined(WOLFSSL_DEOS_RTEMS)
     #include <time.h>
-
+        #ifndef XTIME
+            extern time_t deos_time(time_t* timer);
+            #define XTIME(t1) deos_time((t1))
+        #endif
 #elif defined(MICRIUM)
     #include <clk.h>
     #include <time.h>
@@ -778,6 +781,13 @@ WOLFSSL_ABI WOLFSSL_API int wolfCrypt_Cleanup(void);
     extern time_t pic32_time(time_t* timer);
     #define XTIME(t1)       pic32_time((t1))
     #define XGMTIME(c, t)   gmtime((c))
+
+#elif defined(FREESCALE_RTC)
+    #include <time.h>
+        #include "fsl_rtc.h"
+        #ifndef XTIME
+        #define XTIME(t1) fsl_time((t1))
+    #endif
 
 #elif defined(FREESCALE_MQX) || defined(FREESCALE_KSDK_MQX)
     #ifdef FREESCALE_MQX_4_0

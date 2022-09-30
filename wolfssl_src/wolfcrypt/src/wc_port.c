@@ -2445,7 +2445,7 @@ time_t pic32_time(time_t* timer)
 
 #endif /* MICROCHIP_TCPIP || MICROCHIP_TCPIP_V5 */
 
-#if defined(WOLFSSL_DEOS)
+#if defined(WOLFSSL_DEOS) || defined(WOLFSSL_DEOS_RTEMS)
 
 time_t deos_time(time_t* timer)
 {
@@ -2462,7 +2462,16 @@ time_t deos_time(time_t* timer)
         return (time_t) *systemTickPtr/systemTickTimeInHz;
     #endif
 }
-#endif /* WOLFSSL_DEOS */
+#endif /* WOLFSSL_DEOS || WOLFSSL_DEOS_RTEMS */
+
+#if defined(FREESCALE_RTC)
+#include "fsl_rtc.h"
+time_t fsl_time(time_t* t)
+{
+    *t = RTC_GetSecondsTimerCount(RTC);
+    return *t;
+}
+#endif
 
 #if defined(MICRIUM)
 
