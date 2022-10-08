@@ -32,14 +32,14 @@
 #include "interned-string.h"
 #include "net.h" // tr_socket_t
 #include "open-files.h"
+#include "port-forwarding.h"
 #include "quark.h"
 #include "session-id.h"
 #include "stats.h"
-#include "timer.h"
 #include "torrents.h"
 #include "tr-lpd.h"
-#include "web.h"
 #include "verify.h"
+#include "web.h"
 
 enum tr_auto_switch_state_t
 {
@@ -61,6 +61,12 @@ struct BlocklistFile;
 struct struct_utp_context;
 struct tr_announcer;
 struct tr_announcer_udp;
+
+namespace libtransmission
+{
+class Timer;
+class TimerMaker;
+} // namespace libtransmission
 
 namespace libtransmission::test
 {
@@ -487,8 +493,8 @@ public:
 
         ~tr_udp_core();
 
-        void dhtUninit();
-        void dhtUpkeep();
+        static void dhtUninit();
+        static void dhtUpkeep();
 
         void set_socket_buffers();
 
@@ -768,8 +774,6 @@ public:
 private:
     [[nodiscard]] tr_port randomPort() const;
 
-    void loadBlocklists();
-
     struct init_data;
     void initImpl(init_data&);
     void setImpl(init_data&);
@@ -892,6 +896,41 @@ private:
     bool should_scrape_paused_torrents_ = false;
     bool is_incomplete_file_naming_enabled_ = false;
 
+    class PortForwardingMediator final : public tr_port_forwarding::Mediator
+    {
+    public:
+        explicit PortForwardingMediator(tr_session& session)
+            : session_{ session }
+        {
+        }
+
+        [[nodiscard]] tr_address incomingPeerAddress() const override
+        {
+            return session_.bind_ipv4.addr_;
+        }
+
+        [[nodiscard]] tr_port privatePeerPort() const override
+        {
+            return session_.private_peer_port;
+        }
+
+        [[nodiscard]] libtransmission::TimerMaker& timerMaker() override
+        {
+            return session_.timerMaker();
+        }
+
+        void onPortForwarded(tr_port public_port, tr_port private_port) override
+        {
+            session_.public_peer_port = public_port;
+            session_.private_peer_port = private_port;
+        }
+
+    private:
+        tr_session& session_;
+    };
+
+    PortForwardingMediator port_forwarding_mediator_{ *this };
+
     class WebMediator final : public tr_web::Mediator
     {
     public:
@@ -931,6 +970,11 @@ private:
         [[nodiscard]] bool allowsLPD() const override
         {
             return session_.allowsLPD();
+        }
+
+        [[nodiscard]] libtransmission::TimerMaker& timerMaker() override
+        {
+            return session_.timerMaker();
         }
 
         [[nodiscard]] std::vector<TorrentInfo> torrents() const override;

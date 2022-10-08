@@ -8,7 +8,9 @@
 #include <cstdio>
 #include <cstdlib> // bsearch()
 #include <fstream>
+#include <memory>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include <fmt/core.h>
@@ -20,7 +22,10 @@
 #include "file.h"
 #include "log.h"
 #include "net.h"
+#include "tr-strbuf.h"
 #include "utils.h"
+
+using namespace std::literals;
 
 /***
 ****  PRIVATE
@@ -117,6 +122,89 @@ void BlocklistFile::ensureLoaded() const
 /***
 ****  PACKAGE-VISIBLE
 ***/
+
+std::vector<std::unique_ptr<BlocklistFile>> BlocklistFile::loadBlocklists(
+    std::string_view const config_dir,
+    bool const is_enabled)
+{
+    auto loadme = std::unordered_set<std::string>{};
+    auto working_set = std::vector<std::unique_ptr<BlocklistFile>>{};
+
+    /* walk the blocklist directory... */
+    auto const dirname = tr_pathbuf{ config_dir, "/blocklists"sv };
+    auto const odir = tr_sys_dir_open(dirname);
+
+    if (odir == TR_BAD_SYS_DIR)
+    {
+        return working_set;
+    }
+
+    char const* name = nullptr;
+    while ((name = tr_sys_dir_read_name(odir)) != nullptr)
+    {
+        auto load = std::string{};
+
+        if (name[0] == '.') /* ignore dotfiles */
+        {
+            continue;
+        }
+
+        if (auto const path = tr_pathbuf{ dirname, '/', name }; tr_strvEndsWith(path, ".bin"sv))
+        {
+            load = path;
+        }
+        else
+        {
+            auto const binname = tr_pathbuf{ dirname, '/', name, ".bin"sv };
+
+            if (auto const bininfo = tr_sys_path_get_info(binname); !bininfo)
+            {
+                // create it
+                auto b = BlocklistFile{ binname, is_enabled };
+                if (auto const n = b.setContent(path); n > 0)
+                {
+                    load = binname;
+                }
+            }
+            else if (auto const pathinfo = tr_sys_path_get_info(path);
+                     pathinfo && pathinfo->last_modified_at >= bininfo->last_modified_at)
+            {
+                // update it
+                auto const old = tr_pathbuf{ binname, ".old"sv };
+                tr_sys_path_remove(old);
+                tr_sys_path_rename(binname, old);
+
+                BlocklistFile b(binname, is_enabled);
+
+                if (b.setContent(path) > 0)
+                {
+                    tr_sys_path_remove(old);
+                }
+                else
+                {
+                    tr_sys_path_remove(binname);
+                    tr_sys_path_rename(old, binname);
+                }
+            }
+        }
+
+        if (!std::empty(load))
+        {
+            loadme.emplace(load);
+        }
+    }
+
+    std::transform(
+        std::begin(loadme),
+        std::end(loadme),
+        std::back_inserter(working_set),
+        [&is_enabled](auto const& path) { return std::make_unique<BlocklistFile>(path.c_str(), is_enabled); });
+
+    /* cleanup */
+    tr_sys_dir_close(odir);
+
+    return working_set;
+}
 
 bool BlocklistFile::hasAddress(tr_address const& addr)
 {
@@ -471,32 +559,31 @@ void BlocklistFile::assertValidRules(std::vector<AddressRange> const& ranges)
         }
     }
 
-    auto ranges_IPv6 = std::vector<AddressRange>{};
-    auto ranges_IPv4 = std::vector<AddressRange>{};
+    auto ranges_ipv4 = std::vector<AddressRange>{};
+    auto ranges_ipv6 = std::vector<AddressRange>{};
 
     for (size_t i = 0; i < std::size(ranges); i++)
     {
         if (ranges[i].begin_ == 0 && ranges[i].end_ == 0)
         {
-            ranges_IPv6.push_back(ranges[i]);
+            ranges_ipv6.emplace_back(ranges[i]);
         }
         else
         {
-            ranges_IPv4.push_back(ranges[i]);
+            ranges_ipv4.emplace_back(ranges[i]);
         }
     }
 
-    for (size_t i = 1; i < std::size(ranges_IPv4); ++i)
+    for (size_t i = 1; i < std::size(ranges_ipv4); ++i)
     {
-        TR_ASSERT(ranges_IPv4[i - 1].end_ < ranges_IPv4[i].begin_);
+        TR_ASSERT(ranges_ipv4[i - 1].end_ < ranges_ipv4[i].begin_);
     }
 
-    for (size_t i = 1; i < std::size(ranges_IPv6); ++i)
+    for (size_t i = 1; i < std::size(ranges_ipv6); ++i)
     {
-        auto last_end_address = ranges_IPv6[i - 1].end6_.s6_addr;
-        auto start_address = ranges_IPv6[i].begin6_.s6_addr;
-
-        TR_ASSERT(memcmp(last_end_address, start_address, sizeof(&start_address)) > 0);
+        auto const& last_end_address = ranges_ipv6[i - 1].end6_;
+        auto const& start_address = ranges_ipv6[i].begin6_;
+        TR_ASSERT(memcmp(&last_end_address, &start_address, sizeof(start_address)) > 0);
     }
 }
 #endif
