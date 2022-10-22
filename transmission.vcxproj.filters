@@ -2210,6 +2210,15 @@
     <ClInclude Include="libtransmission\web-utils.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
+    <ClInclude Include="libtransmission\tr-buffer.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\dns.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\dns-ev.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />

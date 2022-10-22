@@ -696,6 +696,8 @@
     <ClInclude Include="libtransmission\clients.h" />
     <ClInclude Include="libtransmission\completion.h" />
     <ClInclude Include="libtransmission\crypto-utils.h" />
+    <ClInclude Include="libtransmission\dns-ev.h" />
+    <ClInclude Include="libtransmission\dns.h" />
     <ClInclude Include="libtransmission\error-types.h" />
     <ClInclude Include="libtransmission\error.h" />
     <ClInclude Include="libtransmission\file-piece-map.h" />
@@ -742,6 +744,7 @@
     <ClInclude Include="libtransmission\torrents.h" />
     <ClInclude Include="libtransmission\tr-arc4.h" />
     <ClInclude Include="libtransmission\tr-assert.h" />
+    <ClInclude Include="libtransmission\tr-buffer.h" />
     <ClInclude Include="libtransmission\tr-dht.h" />
     <ClInclude Include="libtransmission\tr-getopt.h" />
     <ClInclude Include="libtransmission\tr-lpd.h" />
