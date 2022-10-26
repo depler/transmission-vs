@@ -2219,6 +2219,9 @@
     <ClInclude Include="libtransmission\dns-ev.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
+    <ClInclude Include="b64\ccommon.h">
+      <Filter>b64</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />
