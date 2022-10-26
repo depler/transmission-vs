@@ -125,7 +125,7 @@ public:
     Buffer& operator=(Buffer&&) = default;
 
     template<typename T>
-    Buffer(T const& data)
+    explicit Buffer(T const& data)
     {
         add(std::data(data), std::size(data));
     }
@@ -137,7 +137,7 @@ public:
 
     [[nodiscard]] auto empty() const noexcept
     {
-        return size() == 0U;
+        return evbuffer_get_length(buf_.get()) == 0;
     }
 
     [[nodiscard]] auto vecs(size_t n_bytes) const
@@ -300,6 +300,12 @@ public:
     void push_back(T ch)
     {
         add(&ch, 1);
+    }
+
+    void addPort(tr_port const& port)
+    {
+        auto nport = port.network();
+        add(&nport, sizeof(nport));
     }
 
     void addUint8(uint8_t uch)

@@ -321,7 +321,7 @@ struct tr_peer_socket tr_netOpenPeerSocket(tr_session* session, tr_address const
     auto const [source_addr, is_default_addr] = session->publicAddress(addr->type);
     auto const [source_sock, sourcelen] = source_addr.toSockaddr({});
 
-    if (bind(s, (struct sockaddr*)&source_sock, sourcelen) == -1)
+    if (bind(s, reinterpret_cast<sockaddr const*>(&source_sock), sourcelen) == -1)
     {
         tr_logAddWarn(fmt::format(
             _("Couldn't set source address {address} on {socket}: {error} ({error_code})"),
@@ -334,7 +334,7 @@ struct tr_peer_socket tr_netOpenPeerSocket(tr_session* session, tr_address const
     }
 
     auto ret = tr_peer_socket{};
-    if (connect(s, (struct sockaddr*)&sock, addrlen) == -1 &&
+    if (connect(s, reinterpret_cast<sockaddr const*>(&sock), addrlen) == -1 &&
 #ifdef _WIN32
         sockerrno != WSAEWOULDBLOCK &&
 #endif
@@ -812,13 +812,13 @@ struct tr_peer_socket tr_peer_socket_utp_create(struct UTPSocket* const handle)
 
 /// tr_port
 
-std::pair<tr_port, uint8_t const*> tr_port::fromCompact(uint8_t const* compact) noexcept
+std::pair<tr_port, std::byte const*> tr_port::fromCompact(std::byte const* compact) noexcept
 {
     static auto constexpr PortLen = size_t{ 2 };
 
     static_assert(PortLen == sizeof(uint16_t));
     auto nport = uint16_t{};
-    std::copy_n(compact, PortLen, reinterpret_cast<uint8_t*>(&nport));
+    std::copy_n(compact, PortLen, reinterpret_cast<std::byte*>(&nport));
     compact += PortLen;
 
     return std::make_pair(tr_port::fromNetwork(nport), compact);
@@ -878,26 +878,26 @@ template char* tr_address::readable<char*>(char*, tr_port) const;
     return buf;
 }
 
-std::pair<tr_address, uint8_t const*> tr_address::fromCompact4(uint8_t const* compact) noexcept
+std::pair<tr_address, std::byte const*> tr_address::fromCompact4(std::byte const* compact) noexcept
 {
     static auto constexpr Addr4Len = size_t{ 4 };
 
     auto address = tr_address{};
     static_assert(sizeof(address.addr.addr4) == Addr4Len);
     address.type = TR_AF_INET;
-    std::copy_n(compact, Addr4Len, reinterpret_cast<uint8_t*>(&address.addr));
+    std::copy_n(compact, Addr4Len, reinterpret_cast<std::byte*>(&address.addr));
     compact += Addr4Len;
 
     return std::make_pair(address, compact);
 }
 
-std::pair<tr_address, uint8_t const*> tr_address::fromCompact6(uint8_t const* compact) noexcept
+std::pair<tr_address, std::byte const*> tr_address::fromCompact6(std::byte const* compact) noexcept
 {
     static auto constexpr Addr6Len = size_t{ 16 };
 
     auto address = tr_address{};
     address.type = TR_AF_INET6;
-    std::copy_n(compact, Addr6Len, reinterpret_cast<uint8_t*>(&address.addr.addr6.s6_addr));
+    std::copy_n(compact, Addr6Len, reinterpret_cast<std::byte*>(&address.addr.addr6.s6_addr));
     compact += Addr6Len;
 
     return std::make_pair(address, compact);
