@@ -4,7 +4,7 @@ This project is about building Transmission torrent daemon as a single binary wi
 Current source code components:
 * Transmission (https://github.com/transmission/transmission): 4.00 (beta)
 * WolfSSL (https://github.com/wolfSSL/wolfssl): 5.5.1
-* Curl (https://github.com/curl/curl): 7.85.0
+* Curl (https://github.com/curl/curl): 7.86.0
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.13
 
