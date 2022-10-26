@@ -105,7 +105,6 @@
     <ClCompile Include="curl\lib\content_encoding.c" />
     <ClCompile Include="curl\lib\cookie.c" />
     <ClCompile Include="curl\lib\curl_addrinfo.c" />
-    <ClCompile Include="curl\lib\curl_ctype.c" />
     <ClCompile Include="curl\lib\curl_des.c" />
     <ClCompile Include="curl\lib\curl_endian.c" />
     <ClCompile Include="curl\lib\curl_fnmatch.c" />
@@ -124,7 +123,6 @@
     <ClCompile Include="curl\lib\curl_threads.c" />
     <ClCompile Include="curl\lib\dict.c" />
     <ClCompile Include="curl\lib\doh.c" />
-    <ClCompile Include="curl\lib\dotdot.c" />
     <ClCompile Include="curl\lib\dynbuf.c" />
     <ClCompile Include="curl\lib\easy.c" />
     <ClCompile Include="curl\lib\easygetopt.c" />
@@ -173,6 +171,7 @@
     <ClCompile Include="curl\lib\multi.c" />
     <ClCompile Include="curl\lib\netrc.c" />
     <ClCompile Include="curl\lib\nonblock.c" />
+    <ClCompile Include="curl\lib\noproxy.c" />
     <ClCompile Include="curl\lib\openldap.c" />
     <ClCompile Include="curl\lib\parsedate.c" />
     <ClCompile Include="curl\lib\pingpong.c" />
@@ -248,6 +247,7 @@
     <ClCompile Include="curl\lib\vtls\x509asn1.c" />
     <ClCompile Include="curl\lib\warnless.c" />
     <ClCompile Include="curl\lib\wildcard.c" />
+    <ClCompile Include="curl\lib\ws.c" />
     <ClCompile Include="daemon\daemon-win32.cc" />
     <ClCompile Include="daemon\daemon.cc" />
     <ClCompile Include="event2\arc4random.c">
@@ -458,6 +458,7 @@
     <ClInclude Include="curl\include\curl\system.h" />
     <ClInclude Include="curl\include\curl\typecheck-gcc.h" />
     <ClInclude Include="curl\include\curl\urlapi.h" />
+    <ClInclude Include="curl\include\curl\websockets.h" />
     <ClInclude Include="curl\lib\altsvc.h" />
     <ClInclude Include="curl\lib\amigaos.h" />
     <ClInclude Include="curl\lib\arpa_telnet.h" />
@@ -501,7 +502,6 @@
     <ClInclude Include="curl\lib\curl_threads.h" />
     <ClInclude Include="curl\lib\dict.h" />
     <ClInclude Include="curl\lib\doh.h" />
-    <ClInclude Include="curl\lib\dotdot.h" />
     <ClInclude Include="curl\lib\dynbuf.h" />
     <ClInclude Include="curl\lib\easyif.h" />
     <ClInclude Include="curl\lib\easyoptions.h" />
@@ -513,6 +513,7 @@
     <ClInclude Include="curl\lib\formdata.h" />
     <ClInclude Include="curl\lib\ftp.h" />
     <ClInclude Include="curl\lib\ftplistparser.h" />
+    <ClInclude Include="curl\lib\functypes.h" />
     <ClInclude Include="curl\lib\getinfo.h" />
     <ClInclude Include="curl\lib\gopher.h" />
     <ClInclude Include="curl\lib\hash.h" />
@@ -539,6 +540,7 @@
     <ClInclude Include="curl\lib\multiif.h" />
     <ClInclude Include="curl\lib\netrc.h" />
     <ClInclude Include="curl\lib\nonblock.h" />
+    <ClInclude Include="curl\lib\noproxy.h" />
     <ClInclude Include="curl\lib\parsedate.h" />
     <ClInclude Include="curl\lib\pingpong.h" />
     <ClInclude Include="curl\lib\pop3.h" />
@@ -601,6 +603,7 @@
     <ClInclude Include="curl\lib\vtls\x509asn1.h" />
     <ClInclude Include="curl\lib\warnless.h" />
     <ClInclude Include="curl\lib\wildcard.h" />
+    <ClInclude Include="curl\lib\ws.h" />
     <ClInclude Include="daemon\daemon.h" />
     <ClInclude Include="event2\buffer.h" />
     <ClInclude Include="event2\bufferevent-internal.h" />

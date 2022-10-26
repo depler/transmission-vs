@@ -408,6 +408,219 @@
     <ClCompile Include="wolfssl_src\wolfcrypt\src\sha512.c">
       <Filter>wolfssl</Filter>
     </ClCompile>
+    <ClCompile Include="libtransmission\jsonsl.c">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\wildmat.c">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\announce-list.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\announcer.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\announcer-http.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\announcer-udp.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\bandwidth.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\bitfield.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\block-info.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\blocklist.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\cache.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\clients.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\completion.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\crypto-utils.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\crypto-utils-fallback.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\error.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\file.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\file-piece-map.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\file-win32.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\handshake.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\inout.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\log.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\magnet-metainfo.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\makemeta.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\net.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\open-files.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-io.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-mgr.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-mgr-active-requests.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-mgr-wishlist.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-mse.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-msgs.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\platform.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\platform-quota.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\port-forwarding.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\port-forwarding-natpmp.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\port-forwarding-upnp.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\quark.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\resume.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\rpcimpl.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\rpc-server.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\session.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\session-id.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\stats.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\subprocess-win32.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\timer-ev.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrent.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrent-ctor.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrent-files.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrent-magnet.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrent-metainfo.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\torrents.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-assert.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-dht.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\trevent.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-getopt.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-lpd.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-udp.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\tr-utp.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\utils.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\variant.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\variant-benc.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\variant-json.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\verify.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\watchdir.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\watchdir-generic.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\watchdir-win32.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\web.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\webseed.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\web-utils.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
     <ClCompile Include="curl\lib\altsvc.c">
       <Filter>curl</Filter>
     </ClCompile>
@@ -442,9 +655,6 @@
       <Filter>curl</Filter>
     </ClCompile>
     <ClCompile Include="curl\lib\curl_addrinfo.c">
-      <Filter>curl</Filter>
-    </ClCompile>
-    <ClCompile Include="curl\lib\curl_ctype.c">
       <Filter>curl</Filter>
     </ClCompile>
     <ClCompile Include="curl\lib\curl_des.c">
@@ -499,9 +709,6 @@
       <Filter>curl</Filter>
     </ClCompile>
     <ClCompile Include="curl\lib\doh.c">
-      <Filter>curl</Filter>
-    </ClCompile>
-    <ClCompile Include="curl\lib\dotdot.c">
       <Filter>curl</Filter>
     </ClCompile>
     <ClCompile Include="curl\lib\dynbuf.c">
@@ -873,218 +1080,11 @@
     <ClCompile Include="curl\lib\wildcard.c">
       <Filter>curl</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\jsonsl.c">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\wildmat.c">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\announce-list.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\announcer.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\announcer-http.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\announcer-udp.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\bandwidth.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\bitfield.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\block-info.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\blocklist.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\cache.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\clients.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\completion.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-fallback.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\error.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\file.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\file-piece-map.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\file-win32.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\handshake.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\inout.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\log.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\magnet-metainfo.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\makemeta.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\net.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\open-files.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-io.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-mgr.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-mgr-active-requests.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-mgr-wishlist.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-mse.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\peer-msgs.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\platform.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\platform-quota.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\port-forwarding.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\port-forwarding-natpmp.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\port-forwarding-upnp.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\quark.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\resume.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\rpcimpl.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\rpc-server.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\session.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\session-id.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\stats.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\subprocess-win32.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\timer-ev.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrent.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrent-ctor.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrent-files.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrent-magnet.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrent-metainfo.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\torrents.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-assert.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-dht.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\trevent.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-getopt.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-lpd.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-udp.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\tr-utp.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\utils.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\variant.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\variant-benc.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\variant-json.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\verify.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\watchdir.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\watchdir-generic.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\watchdir-win32.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\web.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\webseed.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\web-utils.cc">
-      <Filter>libtransmission</Filter>
+    <ClCompile Include="curl\lib\ws.c">
+      <Filter>curl</Filter>
+    </ClCompile>
+    <ClCompile Include="curl\lib\noproxy.c">
+      <Filter>curl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1517,6 +1517,249 @@
     <ClInclude Include="wolfssl\wolfcrypt\user_settings.h">
       <Filter>wolfssl</Filter>
     </ClInclude>
+    <ClInclude Include="libtransmission\announce-list.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\announcer.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\announcer-common.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\bandwidth.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\benc.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\bitfield.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\block-info.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\blocklist.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\cache.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\clients.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\completion.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\crypto-utils.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\error.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\error-types.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\file.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\file-piece-map.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\handshake.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\history.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\inout.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\interned-string.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\jsonsl.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\log.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\lru-cache.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\magnet-metainfo.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\makemeta.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\mime-types.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\net.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\open-files.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-common.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-io.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-mgr.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-mgr-active-requests.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-mgr-wishlist.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-mse.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-msgs.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\peer-socket.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\platform.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\platform-quota.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\port-forwarding.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\port-forwarding-natpmp.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\port-forwarding-upnp.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\quark.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\resume.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\rpcimpl.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\rpc-server.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\session.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\session-id.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\stats.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\subprocess.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\timer.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\timer-ev.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\torrent.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\torrent-files.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\torrent-magnet.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\torrent-metainfo.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\torrents.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\transmission.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-arc4.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-assert.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-dht.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\trevent.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-getopt.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-lpd.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-macros.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-popcount.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-strbuf.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-utp.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\utils.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\variant.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\variant-common.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\verify.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\version.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\watchdir.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\watchdir-base.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\web.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\webseed.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\web-utils.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\tr-buffer.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\dns.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\dns-ev.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="b64\ccommon.h">
+      <Filter>b64</Filter>
+    </ClInclude>
     <ClInclude Include="curl\include\curl\curl.h">
       <Filter>curl</Filter>
     </ClInclude>
@@ -1677,9 +1920,6 @@
       <Filter>curl</Filter>
     </ClInclude>
     <ClInclude Include="curl\lib\doh.h">
-      <Filter>curl</Filter>
-    </ClInclude>
-    <ClInclude Include="curl\lib\dotdot.h">
       <Filter>curl</Filter>
     </ClInclude>
     <ClInclude Include="curl\lib\dynbuf.h">
@@ -1979,248 +2219,17 @@
     <ClInclude Include="curl\lib\wildcard.h">
       <Filter>curl</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\announce-list.h">
-      <Filter>libtransmission</Filter>
+    <ClInclude Include="curl\lib\functypes.h">
+      <Filter>curl</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\announcer.h">
-      <Filter>libtransmission</Filter>
+    <ClInclude Include="curl\include\curl\websockets.h">
+      <Filter>curl</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\announcer-common.h">
-      <Filter>libtransmission</Filter>
+    <ClInclude Include="curl\lib\ws.h">
+      <Filter>curl</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\bandwidth.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\benc.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\bitfield.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\block-info.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\blocklist.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\cache.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\clients.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\completion.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\crypto-utils.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\error.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\error-types.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\file.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\file-piece-map.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\handshake.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\history.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\inout.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\interned-string.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\jsonsl.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\log.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\lru-cache.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\magnet-metainfo.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\makemeta.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\mime-types.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\net.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\open-files.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-common.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-io.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-mgr.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-mgr-active-requests.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-mgr-wishlist.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-mse.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-msgs.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\peer-socket.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\platform.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\platform-quota.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\port-forwarding.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\port-forwarding-natpmp.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\port-forwarding-upnp.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\quark.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\resume.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\rpcimpl.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\rpc-server.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\session.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\session-id.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\stats.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\subprocess.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\timer.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\timer-ev.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\torrent.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\torrent-files.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\torrent-magnet.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\torrent-metainfo.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\torrents.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\transmission.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-arc4.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-assert.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-dht.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\trevent.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-getopt.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-lpd.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-macros.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-popcount.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-strbuf.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-utp.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\utils.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\variant.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\variant-common.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\verify.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\version.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\watchdir.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\watchdir-base.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\web.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\webseed.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\web-utils.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\tr-buffer.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\dns.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="libtransmission\dns-ev.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
-    <ClInclude Include="b64\ccommon.h">
-      <Filter>b64</Filter>
+    <ClInclude Include="curl\lib\noproxy.h">
+      <Filter>curl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
