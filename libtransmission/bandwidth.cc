@@ -22,7 +22,7 @@
 ****
 ***/
 
-unsigned int tr_bandwidth::getSpeedBytesPerSecond(RateControl& r, unsigned int interval_msec, uint64_t now)
+tr_bytes_per_second_t tr_bandwidth::getSpeedBytesPerSecond(RateControl& r, unsigned int interval_msec, uint64_t now)
 {
     if (now == 0)
     {
@@ -49,7 +49,7 @@ unsigned int tr_bandwidth::getSpeedBytesPerSecond(RateControl& r, unsigned int i
             }
         }
 
-        r.cache_val_ = unsigned(bytes * 1000U / interval_msec);
+        r.cache_val_ = static_cast<tr_bytes_per_second_t>(bytes * 1000U / interval_msec);
         r.cache_time_ = now;
     }
 
@@ -177,18 +177,18 @@ void tr_bandwidth::phaseOne(std::vector<tr_peerIo*>& peer_array, tr_direction di
     {
         int const i = tr_rand_int_weak(n); /* pick a peer at random */
 
-        /* value of 3000 bytes chosen so that when using µTP we'll send a full-size
-         * frame right away and leave enough buffered data for the next frame to go
-         * out in a timely manner. */
-        size_t const increment = 3000;
+        // value of 3000 bytes chosen so that when using µTP we'll send a full-size
+        // frame right away and leave enough buffered data for the next frame to go
+        // out in a timely manner.
+        static auto constexpr Increment = size_t{ 3000 };
 
-        int const bytes_used = peer_array[i]->flush(dir, increment);
+        auto const bytes_used = peer_array[i]->flush(dir, Increment);
 
         tr_logAddTrace(fmt::format("peer #{} of {} used {} bytes in this pass", i, n, bytes_used));
 
-        if (bytes_used != int(increment))
+        if (bytes_used != Increment)
         {
-            /* peer is done writing for now; move it to the end of the list */
+            // peer is done writing for now; move it to the end of the list
             std::swap(peer_array[i], peer_array[n - 1]);
             --n;
         }
