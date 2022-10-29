@@ -87,6 +87,7 @@ ASN Options:
  * WOLFSSL_CERT_NAME_ALL: Adds more certificate name capability at the
     cost of taking up more memory. Adds initials, givenname, dnQualifer for
     example.
+ * WC_ASN_HASH_SHA256: Force use of SHA2-256 for the internal hash ID calcs.
 */
 
 #ifndef NO_ASN
@@ -214,13 +215,15 @@ extern int wc_InitRsaHw(RsaKey* key);
 
 /* Calculates the minimum number of bytes required to encode the value.
  *
+ * Only support up to 2^24-1.
+ *
  * @param [in] value  Value to be encoded.
  * @return  Number of bytes to encode value.
  */
 static word32 BytePrecision(word32 value)
 {
     word32 i;
-    for (i = (word32)sizeof(value); i; --i)
+    for (i = (word32)sizeof(value) - 1; i; --i)
         if (value >> ((i - 1) * WOLFSSL_BIT_SIZE))
             break;
 
@@ -12014,7 +12017,7 @@ int CalcHashId(const byte* data, word32 len, byte* hash)
 {
     int ret;
 
-#if defined(NO_SHA) && !defined(NO_SHA256)
+#if defined(NO_SHA) || (!defined(NO_SHA256) && defined(WC_ASN_HASH_SHA256))
     ret = wc_Sha256Hash(data, len, hash);
 #elif !defined(NO_SHA)
     ret = wc_ShaHash(data, len, hash);
@@ -12063,7 +12066,7 @@ static int GetHashId(const byte* id, int length, byte* hash)
 /* Id for jurisdiction country. */
 #define ASN_JURIS_C   0x203
 /* Id for jurisdiction state. */
-#define ASN_JURIS_ST  0x203
+#define ASN_JURIS_ST  0x202
 
 /* Set the string for a name component into the subject name. */
 #define SetCertNameSubject(cert, id, val) \
@@ -13587,7 +13590,7 @@ int GetName(DecodedCert* cert, int nameType, int maxIdx)
     word32 localIdx;
     byte   tag;
 
-    WOLFSSL_MSG("Getting Cert Name");
+    WOLFSSL_MSG("Getting Name");
 
     if (nameType == ISSUER) {
         full = cert->issuer;
@@ -13634,7 +13637,7 @@ int GetName(DecodedCert* cert, int nameType, int maxIdx)
     char*  full;
     byte*  hash;
 
-    WOLFSSL_MSG("Getting Cert Name");
+    WOLFSSL_MSG("Getting Name");
 
     XMEMSET(dataASN, 0, sizeof(dataASN));
     /* Initialize for data and don't check optional prefix OID. */
@@ -14008,9 +14011,9 @@ int wc_ValidateDate(const byte* date, byte format, int dateType)
     struct tm* localTime;
     struct tm* tmpTime;
     int    i = 0;
-    int    timeDiff = 0 ;
-    int    diffHH = 0 ; int diffMM = 0 ;
-    int    diffSign = 0 ;
+    int    timeDiff = 0;
+    int    diffHH = 0, diffMM = 0;
+    int    diffSign = 0;
 
 #if defined(NEED_TMP_TIME)
     struct tm tmpTimeStorage;
@@ -15345,6 +15348,9 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
     byte* rsaKeyIdx)
 {
     int ret = 0;
+#if defined(WOLFSSL_RENESAS_TSIP_TLS) || defined(WOLFSSL_RENESAS_SCEPROTECT)
+    CertAttribute* certatt = NULL;
+#endif
 
     if (sigCtx == NULL || buf == NULL || bufSz == 0 || key == NULL ||
         keySz == 0 || sig == NULL || sigSz == 0) {
@@ -15363,12 +15369,10 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
 #if !defined(WOLFSSL_RENESAS_TSIP_TLS) && !defined(WOLFSSL_RENESAS_SCEPROTECT)
     (void)rsaKeyIdx;
 #else
-    CertAttribute* certatt = NULL;
-
     #if !defined(NO_RSA) || defined(HAVE_ECC)
     certatt = (CertAttribute*)&sigCtx->CertAtt;
     #endif
-    if(certatt) {
+    if (certatt) {
         certatt->keyIndex = rsaKeyIdx;
         certatt->cert = buf;
         certatt->certSz = bufSz;
@@ -15401,7 +15405,7 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
         case SIG_STATE_HASH:
         {
         #if !defined(NO_RSA) && defined(WC_RSA_PSS)
-            if (keyOID == RSAPSSk) {
+            if (sigOID == RSAPSSk) {
                 word32 fakeSigOID = 0;
                 ret = DecodeRsaPssParams(sigParams, sigParamsSz, &sigCtx->hash,
                     &sigCtx->mgf, &sigCtx->saltLen);
@@ -16067,15 +16071,17 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
         {
             switch (keyOID) {
             #ifndef NO_RSA
+                case RSAk:
                 #ifdef WC_RSA_PSS
                 case RSAPSSk:
+                if (sigOID == RSAPSSk) {
                     /* TODO: pkCbRsaPss - RSA PSS callback. */
                     ret = wc_RsaPSS_VerifyInline_ex(sigCtx->sigCpy, sigSz,
                         &sigCtx->out, sigCtx->hash, sigCtx->mgf,
                         sigCtx->saltLen, sigCtx->key.rsa);
-                    break;
+                }
+                else
                 #endif
-                case RSAk:
                 {
                 #if defined(HAVE_PK_CALLBACKS)
                     if (sigCtx->pkCbRsa) {
@@ -16095,8 +16101,8 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                         ret = wc_RsaSSL_VerifyInline(sigCtx->sigCpy, sigSz,
                                                  &sigCtx->out, sigCtx->key.rsa);
                     }
-                    break;
                 }
+                break;
             #endif /* !NO_RSA */
             #if !defined(NO_DSA) && !defined(HAVE_SELFTEST)
                 case DSAk:
@@ -16214,8 +16220,10 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
         {
             switch (keyOID) {
             #ifndef NO_RSA
+                case RSAk:
                 #ifdef WC_RSA_PSS
                 case RSAPSSk:
+                if (sigOID == RSAPSSk) {
                 #if (defined(HAVE_SELFTEST) && \
                      (!defined(HAVE_SELFTEST_VERSION) || \
                       (HAVE_SELFTEST_VERSION < 2))) || \
@@ -16238,8 +16246,9 @@ static int ConfirmSignature(SignatureCtx* sigCtx,
                         sigCtx->heap);
                 #endif
                     break;
+                }
+                else
                 #endif
-                case RSAk:
                 {
                     int encodedSigSz, verifySz;
                 #if defined(WOLFSSL_RENESAS_TSIP_TLS) || \
@@ -23524,7 +23533,7 @@ int wc_PemToDer(const unsigned char* buff, long longSz, int type,
     return ret;
 }
 
-
+#ifdef WOLFSSL_ENCRYPTED_KEYS
 /* our KeyPemToDer password callback, password in userData */
 static int KeyPemToDerPassCb(char* passwd, int sz, int rw, void* userdata)
 {
@@ -23536,6 +23545,7 @@ static int KeyPemToDerPassCb(char* passwd, int sz, int rw, void* userdata)
     XSTRNCPY(passwd, (char*)userdata, sz);
     return min((word32)sz, (word32)XSTRLEN((char*)userdata));
 }
+#endif
 
 /* Return bytes written to buff or < 0 for error */
 int wc_KeyPemToDer(const unsigned char* pem, int pemSz,
@@ -23564,8 +23574,12 @@ int wc_KeyPemToDer(const unsigned char* pem, int pemSz,
 #endif
 
     XMEMSET(info, 0, sizeof(EncryptedInfo));
+#ifdef WOLFSSL_ENCRYPTED_KEYS
     info->passwd_cb = KeyPemToDerPassCb;
     info->passwd_userdata = (void*)pass;
+#else
+    (void)pass;
+#endif
 
     ret = PemToDer(pem, pemSz, PRIVATEKEY_TYPE, &der, NULL, info, NULL);
 
@@ -33463,7 +33477,7 @@ int wc_Curve448PublicKeyToDer(curve448_key* key, byte* output, word32 inLen,
 
 
 #ifndef WOLFSSL_ASN_TEMPLATE
-#if defined(HAVE_OCSP) || defined(HAVE_CRL)
+#if (defined(HAVE_OCSP) || defined(HAVE_CRL)) && !defined(WOLFCRYPT_ONLY)
 
 /* Get raw Date only, no processing, 0 on success */
 static int GetBasicDate(const byte* source, word32* idx, byte* date,
@@ -33487,7 +33501,7 @@ static int GetBasicDate(const byte* source, word32* idx, byte* date,
 #endif /* WOLFSSL_ASN_TEMPLATE */
 
 
-#ifdef HAVE_OCSP
+#if defined(HAVE_OCSP) && !defined(WOLFCRYPT_ONLY)
 
 #ifndef WOLFSSL_ASN_TEMPLATE
 static int GetEnumerated(const byte* input, word32* inOutIdx, int *value,
@@ -34214,7 +34228,7 @@ static int DecodeResponseData(byte* source, word32* ioIndex,
                     XMEMSET(single->next->status, 0, sizeof(CertStatus));
 
                     /* Entry to be freed. */
-                    single->isDynamic = 1;
+                    single->next->isDynamic = 1;
                     /* used will be 0 (false) */
 
                     single = single->next;
@@ -34663,11 +34677,14 @@ void InitOcspResponse(OcspResponse* resp, OcspEntry* single, CertStatus* status,
 void FreeOcspResponse(OcspResponse* resp)
 {
     OcspEntry *single, *next;
-    for (single = resp->single; single; single = next) {
-        next = single->next;
-        if (single->isDynamic) {
-            XFREE(single->status, resp->heap, DYNAMIC_TYPE_OCSP_STATUS);
-            XFREE(single, resp->heap, DYNAMIC_TYPE_OCSP_ENTRY);
+
+    if (resp != NULL) {
+        for (single = resp->single; single; single = next) {
+            next = single->next;
+            if (single->isDynamic) {
+                XFREE(single->status, resp->heap, DYNAMIC_TYPE_OCSP_STATUS);
+                XFREE(single, resp->heap, DYNAMIC_TYPE_OCSP_ENTRY);
+            }
         }
     }
 }
@@ -35379,7 +35396,7 @@ int GetNameHash(const byte* source, word32* idx, byte* hash, int maxIdx)
 #endif /* WOLFSSL_ASN_TEMPLATE */
 }
 
-#ifdef HAVE_CRL
+#if defined(HAVE_CRL) && !defined(WOLFCRYPT_ONLY)
 
 #ifdef OPENSSL_EXTRA
 static char* GetNameFromDer(const byte* source, int sz)
@@ -35457,8 +35474,8 @@ enum {
 #endif
 
 /* Get Revoked Cert list, 0 on success */
-static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
-                      int maxIdx)
+static int GetRevoked(RevokedCert* rcert, const byte* buff, word32* idx,
+                      DecodedCRL* dcrl, int maxIdx)
 {
 #ifndef WOLFSSL_ASN_TEMPLATE
 #ifndef NO_ASN_TIME
@@ -35467,7 +35484,9 @@ static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
     int len;
     word32 end;
     RevokedCert* rc;
-
+#ifdef CRL_STATIC_REVOKED_LIST
+    int totalCerts = 0;
+#endif
     WOLFSSL_ENTER("GetRevoked");
 
     if (GetSequence(buff, idx, &len, maxIdx) < 0)
@@ -35475,24 +35494,39 @@ static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
 
     end = *idx + len;
 
+#ifdef CRL_STATIC_REVOKED_LIST
+    totalCerts = dcrl->totalCerts;
+
+    if (totalCerts >= CRL_MAX_REVOKED_CERTS) {
+        return MEMORY_E;
+    }
+
+    rc = &rcert[totalCerts];
+    ret = wc_GetSerialNumber(buff, idx, rc->serialNumber, &rc->serialSz,maxIdx);
+    if (ret < 0) {
+        WOLFSSL_MSG("wc_GetSerialNumber error");
+        return ret;
+    }
+#else
+
     rc = (RevokedCert*)XMALLOC(sizeof(RevokedCert), dcrl->heap,
                                                           DYNAMIC_TYPE_REVOKED);
     if (rc == NULL) {
         WOLFSSL_MSG("Alloc Revoked Cert failed");
         return MEMORY_E;
     }
-
-    if (wc_GetSerialNumber(buff, idx, rc->serialNumber, &rc->serialSz,
-                                                                maxIdx) < 0) {
-        XFREE(rc, dcrl->heap, DYNAMIC_TYPE_REVOKED);
-        return ASN_PARSE_E;
+    ret = wc_GetSerialNumber(buff, idx, rc->serialNumber, &rc->serialSz,maxIdx);
+    if (ret < 0) {
+        WOLFSSL_MSG("wc_GetSerialNumber error");
+        return ret;
     }
-
     /* add to list */
     rc->next = dcrl->certs;
     dcrl->certs = rc;
-    dcrl->totalCerts++;
 
+    (void)rcert;
+#endif /* CRL_STATIC_REVOKED_LIST */
+    dcrl->totalCerts++;
     /* get date */
 #ifndef NO_ASN_TIME
     ret = GetBasicDate(buff, idx, rc->revDate, &rc->revDateFormat, maxIdx);
@@ -35511,13 +35545,23 @@ static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
     word32 serialSz = EXTERNAL_SERIAL_SIZE;
     word32 revDateSz = MAX_DATE_SIZE;
     RevokedCert* rc;
+#ifdef CRL_STATIC_REVOKED_LIST
+    int totalCerts = dcrl->totalCerts;
 
+    if (totalCerts >= CRL_MAX_REVOKED_CERTS) {
+        return MEMORY_E;
+    }
+
+    rc = &rcert[totalCerts];
+
+#else
     /* Allocate a new revoked certificate object. */
     rc = (RevokedCert*)XMALLOC(sizeof(RevokedCert), dcrl->heap,
             DYNAMIC_TYPE_CRL);
     if (rc == NULL) {
         ret = MEMORY_E;
     }
+#endif /* CRL_STATIC_REVOKED_LIST */
 
     CALLOC_ASNGETDATA(dataASN, revokedASN_Length, ret, dcrl->heap);
 
@@ -35543,15 +35587,20 @@ static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
 
         /* TODO: use extensions, only v2 */
         /* Add revoked certificate to chain. */
+#ifndef CRL_STATIC_REVOKED_LIST
         rc->next = dcrl->certs;
         dcrl->certs = rc;
+#endif
         dcrl->totalCerts++;
     }
 
     FREE_ASNGETDATA(dataASN, dcrl->heap);
+#ifndef CRL_STATIC_REVOKED_LIST
     if ((ret != 0) && (rc != NULL)) {
         XFREE(rc, dcrl->heap, DYNAMIC_TYPE_CRL);
     }
+    (void)rcert;
+#endif
     return ret;
 #endif /* WOLFSSL_ASN_TEMPLATE */
 }
@@ -35566,15 +35615,15 @@ static int GetRevoked(const byte* buff, word32* idx, DecodedCRL* dcrl,
  * @return  0 on success.
  * @return  ASN_PARSE_E on failure.
  */
-static int ParseCRL_RevokedCerts(DecodedCRL* dcrl, const byte* buff, word32 idx,
-    word32 maxIdx)
+static int ParseCRL_RevokedCerts(RevokedCert* rcert, DecodedCRL* dcrl,
+                                 const byte* buff, word32 idx, word32 maxIdx)
 {
     int ret = 0;
 
     /* Parse each revoked cerificate. */
     while ((ret == 0) && (idx < maxIdx)) {
         /* Parse a revoked certificate. */
-        if (GetRevoked(buff, &idx, dcrl, maxIdx) < 0) {
+        if (GetRevoked(rcert, buff, &idx, dcrl, maxIdx) < 0) {
             ret = ASN_PARSE_E;
         }
     }
@@ -35692,8 +35741,8 @@ static int PaseCRL_CheckSignature(DecodedCRL* dcrl, const byte* buff, void* cm)
 #endif
 
 #ifndef WOLFSSL_ASN_TEMPLATE
-static int ParseCRL_CertList(DecodedCRL* dcrl, const byte* buf,
-        word32* inOutIdx, int sz, int verify)
+static int ParseCRL_CertList(RevokedCert* rcert, DecodedCRL* dcrl,
+                           const byte* buf,word32* inOutIdx, int sz, int verify)
 {
     word32 oid, dateIdx, idx, checkIdx;
     int length;
@@ -35775,7 +35824,7 @@ static int ParseCRL_CertList(DecodedCRL* dcrl, const byte* buf,
         len += idx;
 
         while (idx < (word32)len) {
-            if (GetRevoked(buf, &idx, dcrl, len) < 0)
+            if (GetRevoked(rcert, buf, &idx, dcrl, len) < 0)
                 return ASN_PARSE_E;
         }
     }
@@ -36125,8 +36174,8 @@ enum {
 #endif
 
 /* parse crl buffer into decoded state, 0 on success */
-int ParseCRL(DecodedCRL* dcrl, const byte* buff, word32 sz, int verify,
-        void* cm)
+int ParseCRL(RevokedCert* rcert, DecodedCRL* dcrl, const byte* buff, word32 sz,
+             int verify, void* cm)
 {
 #ifndef WOLFSSL_ASN_TEMPLATE
     Signer*      ca = NULL;
@@ -36155,7 +36204,7 @@ int ParseCRL(DecodedCRL* dcrl, const byte* buff, word32 sz, int verify,
         return ASN_PARSE_E;
     dcrl->sigIndex = len + idx;
 
-    if (ParseCRL_CertList(dcrl, buff, &idx, dcrl->sigIndex, verify) < 0)
+    if (ParseCRL_CertList(rcert, dcrl, buff, &idx, dcrl->sigIndex, verify) < 0)
         return ASN_PARSE_E;
 
     if (ParseCRL_Extensions(dcrl, buff, &idx, dcrl->sigIndex) < 0)
@@ -36291,6 +36340,7 @@ end:
     }
     if (ret == 0) {
     #endif
+#if defined(OPENSSL_EXTRA)
         /* Parse and store the issuer name. */
         dcrl->issuerSz = GetASNItem_Length(dataASN[CRLASN_IDX_TBS_ISSUER],
                             buff);
@@ -36303,10 +36353,12 @@ end:
         if (ret < 0) {
             ret = ASN_PARSE_E;
         }
+#endif
     }
+
     if ((ret == 0) && (dataASN[CRLASN_IDX_TBS_REVOKEDCERTS].tag != 0)) {
         /* Parse revoked cerificates - starting after SEQUENCE OF. */
-        ret = ParseCRL_RevokedCerts(dcrl, buff,
+        ret = ParseCRL_RevokedCerts(rcert, dcrl, buff,
             GetASNItem_DataIdx(dataASN[CRLASN_IDX_TBS_REVOKEDCERTS], buff),
             GetASNItem_EndIdx(dataASN[CRLASN_IDX_TBS_REVOKEDCERTS], buff));
     }

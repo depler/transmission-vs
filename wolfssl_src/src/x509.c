@@ -3667,7 +3667,9 @@ int wolfSSL_sk_X509_push(WOLF_STACK_OF(WOLFSSL_X509_NAME)* sk, WOLFSSL_X509* x50
 }
 
 
-WOLFSSL_X509* wolfSSL_sk_X509_pop(WOLF_STACK_OF(WOLFSSL_X509_NAME)* sk) {
+/* Return and remove the last x509 pushed on stack */
+WOLFSSL_X509* wolfSSL_sk_X509_pop(WOLF_STACK_OF(WOLFSSL_X509_NAME)* sk)
+{
     WOLFSSL_STACK* node;
     WOLFSSL_X509*  x509;
 
@@ -3714,9 +3716,42 @@ WOLFSSL_X509* wolfSSL_sk_X509_value(STACK_OF(WOLFSSL_X509)* sk, int i)
     return sk->data.x509;
 }
 
+
+/* Return and remove the first x509 pushed on stack */
 WOLFSSL_X509* wolfSSL_sk_X509_shift(WOLF_STACK_OF(WOLFSSL_X509)* sk)
 {
-    return wolfSSL_sk_X509_pop(sk);
+    WOLFSSL_STACK* node;
+    WOLFSSL_X509*  x509;
+
+    if (sk == NULL) {
+        return NULL;
+    }
+
+    node = sk->next;
+    x509 = sk->data.x509;
+
+    if (node != NULL) {
+        /* walk to end of stack to first node pushed, and remove it */
+        WOLFSSL_STACK* prevNode = sk;
+
+        while (node->next != NULL) {
+            prevNode = node;
+            node = node->next;
+        }
+
+        x509 = node->data.x509;
+        prevNode->next = NULL;
+        XFREE(node, NULL, DYNAMIC_TYPE_X509);
+    }
+    else { /* only one x509 in stack */
+        sk->data.x509 = NULL;
+    }
+
+    if (sk->num > 0) {
+        sk->num -= 1;
+    }
+
+    return x509;
 }
 
 #endif /* OPENSSL_EXTRA */
@@ -4083,8 +4118,10 @@ static WOLFSSL_DIST_POINT_NAME* wolfSSL_DIST_POINT_NAME_new(void)
     }
     gns->type = STACK_TYPE_GEN_NAME;
 
+    /* DIST_POINT_NAME type may be 0 or 1, indicating whether fullname or
+     * relativename is used. See: RFC 5280 section 4.2.1.13 */
     dpn->name.fullname = gns;
-    dpn->type = CRL_DIST_OID;
+    dpn->type = 0;
 
     return dpn;
 }
@@ -7558,7 +7595,7 @@ int wolfSSL_X509_CRL_get_signature_nid(const WOLFSSL_X509_CRL* crl)
 }
 
 /* Retrieve signature from CRL
- * return WOLFSSL_SUCCESS on success
+ * return WOLFSSL_SUCCESS on success and negative values on failure
  */
 int wolfSSL_X509_CRL_get_signature(WOLFSSL_X509_CRL* crl,
     unsigned char* buf, int* bufSz)
@@ -7576,7 +7613,7 @@ int wolfSSL_X509_CRL_get_signature(WOLFSSL_X509_CRL* crl,
 }
 
 /* Retrieve serial number from RevokedCert
- * return WOLFSSL_SUCCESS on success
+ * return WOLFSSL_SUCCESS on success and negative values on failure
  */
 int wolfSSL_X509_REVOKED_get_serial_number(RevokedCert* rev,
     byte* in, int* inOutSz)
@@ -7598,8 +7635,32 @@ int wolfSSL_X509_REVOKED_get_serial_number(RevokedCert* rev,
     return WOLFSSL_SUCCESS;
 }
 
+const WOLFSSL_ASN1_INTEGER* wolfSSL_X509_REVOKED_get0_serial_number(const
+                                                      WOLFSSL_X509_REVOKED *rev)
+{
+    WOLFSSL_ENTER("wolfSSL_X509_REVOKED_get0_serial_number");
+
+    if (rev != NULL) {
+        return rev->serialNumber;
+    }
+    else
+        return NULL;
+}
+
+#ifndef NO_WOLFSSL_STUB
+const WOLFSSL_ASN1_TIME* wolfSSL_X509_REVOKED_get0_revocation_date(const
+                                                      WOLFSSL_X509_REVOKED *rev)
+{
+    WOLFSSL_STUB("wolfSSL_X509_REVOKED_get0_revocation_date");
+
+    (void) rev;
+    return NULL;
+}
+#endif
+
+
 /* print serial number out
-* return WOLFSSL_SUCCESS on success
+*  return WOLFSSL_SUCCESS on success
 */
 static int X509RevokedPrintSerial(WOLFSSL_BIO* bio, RevokedCert* rev,
     int indent)
@@ -7978,23 +8039,25 @@ void wolfSSL_X509_CRL_free(WOLFSSL_X509_CRL *crl)
 #endif /* HAVE_CRL && (OPENSSL_EXTRA || WOLFSSL_WPAS_SMALL) */
 
 #ifdef OPENSSL_EXTRA
-#ifndef NO_WOLFSSL_STUB
 WOLFSSL_ASN1_TIME* wolfSSL_X509_CRL_get_lastUpdate(WOLFSSL_X509_CRL* crl)
 {
-    (void)crl;
-    WOLFSSL_STUB("X509_CRL_get_lastUpdate");
-    return 0;
+    if ((crl != NULL) && (crl->crlList != NULL) &&
+        (crl->crlList->lastDateAsn1.data[0] != 0)) {
+        return &crl->crlList->lastDateAsn1;
+    }
+    else
+        return NULL;
 }
-#endif
-#ifndef NO_WOLFSSL_STUB
+
 WOLFSSL_ASN1_TIME* wolfSSL_X509_CRL_get_nextUpdate(WOLFSSL_X509_CRL* crl)
 {
-    (void)crl;
-    WOLFSSL_STUB("X509_CRL_get_nextUpdate");
-    return 0;
+    if ((crl != NULL) && (crl->crlList != NULL) &&
+        (crl->crlList->nextDateAsn1.data[0] != 0)) {
+        return &crl->crlList->nextDateAsn1;
+    }
+    else
+        return NULL;
 }
-#endif
-
 
 #ifndef NO_WOLFSSL_STUB
 int wolfSSL_X509_CRL_verify(WOLFSSL_X509_CRL* crl, WOLFSSL_EVP_PKEY* key)
@@ -8133,6 +8196,7 @@ static int wolfSSL_X509_VERIFY_PARAM_inherit(WOLFSSL_X509_VERIFY_PARAM *to,
 
     return ret;
 }
+
 /******************************************************************************
 * wolfSSL_X509_VERIFY_PARAM_set1_host - sets the DNS hostname to name
 * hostnames is cleared if name is NULL or empty.
@@ -8149,8 +8213,11 @@ int wolfSSL_X509_VERIFY_PARAM_set1_host(WOLFSSL_X509_VERIFY_PARAM* pParam,
     if (pParam == NULL)
         return WOLFSSL_FAILURE;
 
-    if (name == NULL)
+    /* If name is NULL, clear hostname. */
+    if (name == NULL) {
+        XMEMSET(pParam->hostName, 0, WOLFSSL_HOST_NAME_MAX);
         return WOLFSSL_SUCCESS;
+    }
 
     /* If name is NULL-terminated, namelen can be set to zero. */
     if (nameSz == 0) {
@@ -12731,7 +12798,13 @@ int wolfSSL_X509_get_signature_nid(const WOLFSSL_X509 *x)
 #endif  /* OPENSSL_EXTRA */
 
 #if defined(OPENSSL_EXTRA)
-WOLFSSL_STACK* wolfSSL_sk_X509_new(void)
+WOLFSSL_STACK* wolfSSL_sk_X509_new(WOLF_SK_COMPARE_CB(WOLFSSL_X509, cb))
+{
+    (void)cb;
+    return wolfSSL_sk_X509_new_null();
+}
+
+WOLFSSL_STACK* wolfSSL_sk_X509_new_null(void)
 {
     WOLFSSL_STACK* s = (WOLFSSL_STACK*)XMALLOC(sizeof(WOLFSSL_STACK), NULL,
             DYNAMIC_TYPE_OPENSSL);
@@ -12742,7 +12815,7 @@ WOLFSSL_STACK* wolfSSL_sk_X509_new(void)
 
     return s;
 }
-#endif
+#endif  /* OPENSSL_EXTRA */
 
 #ifdef OPENSSL_ALL
 

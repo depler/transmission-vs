@@ -1641,8 +1641,10 @@ extern void uITRON4_free(void *p) ;
 
 
 #if defined(WOLFSSL_XILINX)
+    #if !defined(WOLFSSL_XILINX_CRYPT_VERSAL)
+        #define NO_DEV_RANDOM
+    #endif
     #define NO_WOLFSSL_DIR
-    #define NO_DEV_RANDOM
     #define HAVE_AESGCM
 #endif
 
@@ -1924,7 +1926,9 @@ extern void uITRON4_free(void *p) ;
     #if !defined(USE_INTEGER_HEAP_MATH)
         #undef  USE_FAST_MATH
         #define USE_FAST_MATH
-        #define FP_MAX_BITS 8192
+        #ifndef FP_MAX_BITS
+            #define FP_MAX_BITS 8192
+        #endif
     #endif
 #endif
 /*----------------------------------------------------------------------------*/
@@ -2375,9 +2379,6 @@ extern void uITRON4_free(void *p) ;
     #ifndef USE_WOLF_STRTOK
         #define USE_WOLF_STRTOK
     #endif
-    #ifndef WOLFSSL_SP_DIV_WORD_HALF
-        #define WOLFSSL_SP_DIV_WORD_HALF
-    #endif
     #ifndef WOLFSSL_OLD_PRIME_CHECK
         #define WOLFSSL_OLD_PRIME_CHECK
     #endif
@@ -2585,7 +2586,8 @@ extern void uITRON4_free(void *p) ;
 
 #if defined(WOLFCRYPT_ONLY) && defined(NO_AES) && !defined(WOLFSSL_SHA384) && \
     !defined(WOLFSSL_SHA512) && defined(WC_NO_RNG) && \
-    !defined(WOLFSSL_SP_MATH) && !defined(WOLFSSL_SP_MATH_ALL)
+    !defined(WOLFSSL_SP_MATH) && !defined(WOLFSSL_SP_MATH_ALL) \
+    && !defined(USE_FAST_MATH)
     #undef  WOLFSSL_NO_FORCE_ZERO
     #define WOLFSSL_NO_FORCE_ZERO
 #endif
@@ -2857,6 +2859,17 @@ extern void uITRON4_free(void *p) ;
     #undef WOLFSSL_ASYNC_IO
     #define WOLFSSL_ASYNC_IO
 #endif
+
+#ifdef WOLFSSL_SYS_CA_CERTS
+    #ifdef NO_FILESYSTEM
+        #warning "Turning off WOLFSSL_SYS_CA_CERTS b/c NO_FILESYSTEM is defined."
+        #undef WOLFSSL_SYS_CA_CERTS
+    #endif
+    #ifdef NO_CERTS
+        #warning "Turning off WOLFSSL_SYS_CA_CERTS b/c NO_CERTS is defined."
+        #undef WOLFSSL_SYS_CA_CERTS
+    #endif
+#endif /* WOLFSSL_SYS_CA_CERTS */
 
 #ifdef __cplusplus
     }   /* extern "C" */

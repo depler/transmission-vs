@@ -774,6 +774,11 @@ enum AlertDescription {
     no_application_protocol         = 120
 };
 
+#ifdef WOLFSSL_MYSQL_COMPATIBLE
+#define wolfssl_alert_protocol_version wc_protocol_version
+#else
+#define wolfssl_alert_protocol_version protocol_version
+#endif
 
 enum AlertLevel {
     alert_none = 0, /* Used to indicate no alert level is set */
@@ -1070,6 +1075,10 @@ WOLFSSL_API int wolfSSL_CTX_load_verify_locations_ex(
     WOLFSSL_CTX* ctx, const char* file, const char* path, word32 flags);
 WOLFSSL_ABI WOLFSSL_API int wolfSSL_CTX_load_verify_locations(
     WOLFSSL_CTX* ctx, const char* file, const char* path);
+#ifndef _WIN32
+WOLFSSL_API const char** wolfSSL_get_system_CA_dirs(word32* num);
+#endif /* !_WIN32 */
+WOLFSSL_API int wolfSSL_CTX_load_system_CA_certs(WOLFSSL_CTX* ctx);
 #ifdef WOLFSSL_TRUST_PEER_CERT
 WOLFSSL_API int wolfSSL_CTX_trust_peer_cert(
     WOLFSSL_CTX* ctx, const char* file, int type);
@@ -2009,6 +2018,7 @@ WOLFSSL_API int wolfSSL_X509_VERIFY_PARAM_clear_flags(WOLFSSL_X509_VERIFY_PARAM 
         unsigned long flags);
 WOLFSSL_API void wolfSSL_X509_VERIFY_PARAM_set_hostflags(
                 WOLFSSL_X509_VERIFY_PARAM* param, unsigned int flags);
+WOLFSSL_API int wolfSSL_set1_host(WOLFSSL* ssl, const char * name);
 WOLFSSL_API int wolfSSL_X509_VERIFY_PARAM_set1_host(WOLFSSL_X509_VERIFY_PARAM* pParam,
                                                     const char* name,
                                                     unsigned int nameSz);
@@ -2336,7 +2346,6 @@ enum {
     OCSP_BASICRESP = 16,
 #endif
 
-    ASN1_GENERALIZEDTIME = 4,
     SSL_MAX_SSL_SESSION_ID_LENGTH = 32,
 
     SSL_ST_CONNECT = 0x1000,
@@ -2891,6 +2900,13 @@ WOLFSSL_API int wolfSSL_X509_REVOKED_get_serial_number(RevokedCert* rev,
                                                        byte* in, int* inOutSz);
 WOLFSSL_API void wolfSSL_X509_CRL_free(WOLFSSL_X509_CRL *crl);
 #endif
+
+WOLFSSL_API
+const WOLFSSL_ASN1_INTEGER* wolfSSL_X509_REVOKED_get0_serial_number(const
+                                                     WOLFSSL_X509_REVOKED *rev);
+WOLFSSL_API
+const WOLFSSL_ASN1_TIME* wolfSSL_X509_REVOKED_get0_revocation_date(const
+                                                     WOLFSSL_X509_REVOKED *rev);
 
 #ifndef NO_FILESYSTEM
     #ifndef NO_STDIO_FILESYSTEM
@@ -4096,10 +4112,10 @@ typedef int (*TimeoutCallBack)(TimeoutInfo*);
 
 /* wolfSSL connect extension allowing HandShakeCallBack and/or TimeoutCallBack
    for diagnostics */
-WOLFSSL_API int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack, TimeoutCallBack,
-                                 WOLFSSL_TIMEVAL);
-WOLFSSL_API int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBack, TimeoutCallBack,
-                                WOLFSSL_TIMEVAL);
+WOLFSSL_API int wolfSSL_connect_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
+                                 TimeoutCallBack toCb, WOLFSSL_TIMEVAL timeout);
+WOLFSSL_API int wolfSSL_accept_ex(WOLFSSL* ssl, HandShakeCallBack hsCb,
+                                 TimeoutCallBack toCb, WOLFSSL_TIMEVAL timeout);
 
 #endif /* WOLFSSL_CALLBACKS */
 
@@ -4564,7 +4580,11 @@ WOLFSSL_API int wolfSSL_RAND_set_rand_method(const WOLFSSL_RAND_METHOD *methods)
 
 WOLFSSL_API int wolfSSL_CIPHER_get_bits(const WOLFSSL_CIPHER *c, int *alg_bits);
 
-WOLFSSL_API WOLFSSL_STACK* wolfSSL_sk_X509_new(void);
+#define WOLF_SK_COMPARE_CB(type, arg) \
+    int (*(arg)) (const type* const* a, const type* const* b)
+WOLFSSL_API WOLFSSL_STACK* wolfSSL_sk_X509_new(
+    WOLF_SK_COMPARE_CB(WOLFSSL_X509, cb));
+WOLFSSL_API WOLFSSL_STACK* wolfSSL_sk_X509_new_null(void);
 WOLFSSL_API int wolfSSL_sk_X509_num(const WOLF_STACK_OF(WOLFSSL_X509) *s);
 
 WOLFSSL_API WOLFSSL_STACK* wolfSSL_sk_X509_OBJECT_new(void);
@@ -4587,8 +4607,6 @@ WOLFSSL_API void wolfSSL_sk_X509_INFO_pop_free(WOLF_STACK_OF(WOLFSSL_X509_INFO)*
     void (*f) (WOLFSSL_X509_INFO*));
 WOLFSSL_API void wolfSSL_sk_X509_INFO_free(WOLF_STACK_OF(WOLFSSL_X509_INFO)*);
 
-#define WOLF_SK_COMPARE_CB(type, arg) \
-    int (*(arg)) (const type* const* a, const type* const* b)
 typedef unsigned long (*wolf_sk_hash_cb) (const void *v);
 WOLFSSL_API WOLF_STACK_OF(WOLFSSL_X509_NAME)* wolfSSL_sk_X509_NAME_new(
     WOLF_SK_COMPARE_CB(WOLFSSL_X509_NAME, cb));
