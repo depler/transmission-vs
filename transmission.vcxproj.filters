@@ -294,27 +294,6 @@
     <ClCompile Include="fmt\os.cc">
       <Filter>fmt</Filter>
     </ClCompile>
-    <ClCompile Include="libutp\utp_api.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\utp_callbacks.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\utp_hash.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\utp_internal.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\utp_packedsockaddr.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\utp_utils.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
-    <ClCompile Include="libutp\libutp_inet_ntop.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
     <ClCompile Include="wolfssl_src\src\ssl.c">
       <Filter>wolfssl</Filter>
     </ClCompile>
@@ -1095,6 +1074,27 @@
     <ClCompile Include="libtransmission\variant-converters.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
+    <ClCompile Include="libutp\libutp_inet_ntop.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_api.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_callbacks.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_hash.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_internal.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_packedsockaddr.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
+    <ClCompile Include="libutp\utp_utils.cpp">
+      <Filter>libutp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="b64\cdecode.h">
@@ -1495,33 +1495,6 @@
     </ClInclude>
     <ClInclude Include="math\wide_integer\uintwide_t.h">
       <Filter>math</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_types.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_callbacks.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_hash.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_internal.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_packedsockaddr.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_templates.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp_utils.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\libutp_inet_ntop.h">
-      <Filter>libutp</Filter>
-    </ClInclude>
-    <ClInclude Include="libutp\utp.h">
-      <Filter>libutp</Filter>
     </ClInclude>
     <ClInclude Include="wolfssl\wolfcrypt\user_settings.h">
       <Filter>wolfssl</Filter>
@@ -2245,6 +2218,33 @@
     </ClInclude>
     <ClInclude Include="libtransmission\session-settings.h">
       <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\libutp_inet_ntop.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_callbacks.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_hash.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_internal.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_packedsockaddr.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_templates.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_types.h">
+      <Filter>libutp</Filter>
+    </ClInclude>
+    <ClInclude Include="libutp\utp_utils.h">
+      <Filter>libutp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
