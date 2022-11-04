@@ -578,13 +578,13 @@ private:
         // TODO: this needs to consider all the other peers as well...
         uint64_t const now = tr_time_msec();
         auto rate_bytes_per_second = tr_peerGetPieceSpeedBytesPerSecond(this, now, TR_PEER_TO_CLIENT);
-        if (tr_torrentUsesSpeedLimit(torrent, TR_PEER_TO_CLIENT))
+        if (torrent->usesSpeedLimit(TR_PEER_TO_CLIENT))
         {
             rate_bytes_per_second = std::min(rate_bytes_per_second, torrent->speedLimitBps(TR_PEER_TO_CLIENT));
         }
 
         // honor the session limits, if enabled
-        if (tr_torrentUsesSessionLimits(torrent))
+        if (torrent->usesSessionLimits())
         {
             if (auto const irate_bytes_per_second = torrent->session->activeSpeedLimitBps(TR_PEER_TO_CLIENT);
                 irate_bytes_per_second)
@@ -971,7 +971,7 @@ static void sendLtepHandshake(tr_peerMsgsImpl* msgs)
     // port number of the other side. Note that there is no need for the
     // receiving side of the connection to send this extension message,
     // since its port number is already known.
-    tr_variantDictAddInt(&val, TR_KEY_p, msgs->session->peerPort().host());
+    tr_variantDictAddInt(&val, TR_KEY_p, msgs->session->advertisedPeerPort().host());
 
     // http://bittorrent.org/beps/bep_0010.html
     // An integer, the number of outstanding request messages this

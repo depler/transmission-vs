@@ -1086,6 +1086,15 @@
     <ClCompile Include="curl\lib\noproxy.c">
       <Filter>curl</Filter>
     </ClCompile>
+    <ClCompile Include="libtransmission\session-alt-speeds.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\session-settings.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\variant-converters.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="b64\cdecode.h">
@@ -2230,6 +2239,12 @@
     </ClInclude>
     <ClInclude Include="curl\lib\noproxy.h">
       <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\session-alt-speeds.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
+    <ClInclude Include="libtransmission\session-settings.h">
+      <Filter>libtransmission</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

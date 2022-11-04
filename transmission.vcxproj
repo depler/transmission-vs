@@ -339,7 +339,9 @@
     <ClCompile Include="libtransmission\resume.cc" />
     <ClCompile Include="libtransmission\rpc-server.cc" />
     <ClCompile Include="libtransmission\rpcimpl.cc" />
+    <ClCompile Include="libtransmission\session-alt-speeds.cc" />
     <ClCompile Include="libtransmission\session-id.cc" />
+    <ClCompile Include="libtransmission\session-settings.cc" />
     <ClCompile Include="libtransmission\session.cc" />
     <ClCompile Include="libtransmission\stats.cc" />
     <ClCompile Include="libtransmission\subprocess-win32.cc" />
@@ -359,6 +361,7 @@
     <ClCompile Include="libtransmission\trevent.cc" />
     <ClCompile Include="libtransmission\utils.cc" />
     <ClCompile Include="libtransmission\variant-benc.cc" />
+    <ClCompile Include="libtransmission\variant-converters.cc" />
     <ClCompile Include="libtransmission\variant-json.cc" />
     <ClCompile Include="libtransmission\variant.cc" />
     <ClCompile Include="libtransmission\verify.cc" />
@@ -735,7 +738,9 @@
     <ClInclude Include="libtransmission\resume.h" />
     <ClInclude Include="libtransmission\rpc-server.h" />
     <ClInclude Include="libtransmission\rpcimpl.h" />
+    <ClInclude Include="libtransmission\session-alt-speeds.h" />
     <ClInclude Include="libtransmission\session-id.h" />
+    <ClInclude Include="libtransmission\session-settings.h" />
     <ClInclude Include="libtransmission\session.h" />
     <ClInclude Include="libtransmission\stats.h" />
     <ClInclude Include="libtransmission\subprocess.h" />
