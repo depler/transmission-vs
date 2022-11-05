@@ -342,6 +342,7 @@
     <ClCompile Include="libtransmission\session-alt-speeds.cc" />
     <ClCompile Include="libtransmission\session-id.cc" />
     <ClCompile Include="libtransmission\session-settings.cc" />
+    <ClCompile Include="libtransmission\session-thread.cc" />
     <ClCompile Include="libtransmission\session.cc" />
     <ClCompile Include="libtransmission\stats.cc" />
     <ClCompile Include="libtransmission\subprocess-win32.cc" />
@@ -358,7 +359,6 @@
     <ClCompile Include="libtransmission\tr-lpd.cc" />
     <ClCompile Include="libtransmission\tr-udp.cc" />
     <ClCompile Include="libtransmission\tr-utp.cc" />
-    <ClCompile Include="libtransmission\trevent.cc" />
     <ClCompile Include="libtransmission\utils.cc" />
     <ClCompile Include="libtransmission\variant-benc.cc" />
     <ClCompile Include="libtransmission\variant-converters.cc" />
@@ -703,8 +703,6 @@
     <ClInclude Include="libtransmission\clients.h" />
     <ClInclude Include="libtransmission\completion.h" />
     <ClInclude Include="libtransmission\crypto-utils.h" />
-    <ClInclude Include="libtransmission\dns-ev.h" />
-    <ClInclude Include="libtransmission\dns.h" />
     <ClInclude Include="libtransmission\error-types.h" />
     <ClInclude Include="libtransmission\error.h" />
     <ClInclude Include="libtransmission\file-piece-map.h" />
@@ -741,6 +739,7 @@
     <ClInclude Include="libtransmission\session-alt-speeds.h" />
     <ClInclude Include="libtransmission\session-id.h" />
     <ClInclude Include="libtransmission\session-settings.h" />
+    <ClInclude Include="libtransmission\session-thread.h" />
     <ClInclude Include="libtransmission\session.h" />
     <ClInclude Include="libtransmission\stats.h" />
     <ClInclude Include="libtransmission\subprocess.h" />
@@ -762,7 +761,6 @@
     <ClInclude Include="libtransmission\tr-strbuf.h" />
     <ClInclude Include="libtransmission\tr-utp.h" />
     <ClInclude Include="libtransmission\transmission.h" />
-    <ClInclude Include="libtransmission\trevent.h" />
     <ClInclude Include="libtransmission\utils.h" />
     <ClInclude Include="libtransmission\variant-common.h" />
     <ClInclude Include="libtransmission\variant.h" />
