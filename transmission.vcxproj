@@ -666,6 +666,7 @@
     <ClInclude Include="fast_float\fast_table.h" />
     <ClInclude Include="fast_float\float_common.h" />
     <ClInclude Include="fast_float\parse_number.h" />
+    <ClInclude Include="fast_float\simple_decimal_conversion.h" />
     <ClInclude Include="fmt\args.h" />
     <ClInclude Include="fmt\chrono.h" />
     <ClInclude Include="fmt\color.h" />
