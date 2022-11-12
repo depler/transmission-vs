@@ -3,6 +3,7 @@
 // or any future license endorsed by Mnemosyne LLC.
 // License text can be found in the licenses/ folder.
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <functional>
@@ -27,6 +28,7 @@
 #include "session-thread.h"
 #include "tr-assert.h"
 #include "utils.h" // for tr_net_init()
+#include "utils-ev.h"
 
 using namespace std::literals;
 
@@ -135,7 +137,7 @@ auto makeEventBase()
 {
     tr_session_thread::tr_evthread_init();
 
-    return std::unique_ptr<event_base, void (*)(event_base*)>{ event_base_new(), event_base_free };
+    return libtransmission::evhelpers::evbase_unique_ptr{ event_base_new() };
 }
 
 } // namespace
@@ -152,8 +154,6 @@ class tr_session_thread_impl final : public tr_session_thread
 {
 public:
     explicit tr_session_thread_impl()
-        : evbase_{ makeEventBase() }
-        , work_queue_event_{ event_new(evbase_.get(), -1, 0, onWorkAvailableStatic, this), event_free }
     {
         auto lock = std::unique_lock(is_looping_mutex_);
 
@@ -161,7 +161,7 @@ public:
         thread_id_ = thread_.get_id();
 
         // wait for the session thread's main loop to start
-        is_looping_cv_.wait(lock, [this]() { return is_looping_; });
+        is_looping_cv_.wait(lock, [this]() { return is_looping_.load(); });
     }
 
     tr_session_thread_impl(tr_session_thread_impl&&) = delete;
@@ -226,7 +226,7 @@ private:
 #endif
         tr_evthread_init();
 
-        constexpr auto ToggleLooping = [](evutil_socket_t, short, void* vself)
+        constexpr auto ToggleLooping = [](evutil_socket_t, short /*evtype*/, void* vself)
         {
             auto* const self = static_cast<tr_session_thread_impl*>(vself);
             self->is_looping_mutex_.lock();
@@ -273,8 +273,10 @@ private:
         }
     }
 
-    std::unique_ptr<event_base, void (*)(event_base*)> const evbase_;
-    std::unique_ptr<event, void (*)(event*)> const work_queue_event_;
+    libtransmission::evhelpers::evbase_unique_ptr const evbase_{ makeEventBase() };
+    libtransmission::evhelpers::event_unique_ptr const work_queue_event_{
+        event_new(evbase_.get(), -1, 0, onWorkAvailableStatic, this)
+    };
 
     work_queue_t work_queue_;
     std::mutex work_queue_mutex_;
@@ -284,9 +286,9 @@ private:
 
     std::mutex is_looping_mutex_;
     std::condition_variable is_looping_cv_;
-    bool is_looping_ = false;
+    std::atomic<bool> is_looping_ = false;
 
-    bool is_shutting_down_ = false;
+    std::atomic<bool> is_shutting_down_ = false;
     static constexpr std::chrono::seconds Deadline = 5s;
 };
 

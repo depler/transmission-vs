@@ -762,6 +762,7 @@
     <ClInclude Include="libtransmission\tr-strbuf.h" />
     <ClInclude Include="libtransmission\tr-utp.h" />
     <ClInclude Include="libtransmission\transmission.h" />
+    <ClInclude Include="libtransmission\utils-ev.h" />
     <ClInclude Include="libtransmission\utils.h" />
     <ClInclude Include="libtransmission\variant-common.h" />
     <ClInclude Include="libtransmission\variant.h" />

@@ -2243,6 +2243,9 @@
     <ClInclude Include="fast_float\simple_decimal_conversion.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
+    <ClInclude Include="libtransmission\utils-ev.h">
+      <Filter>libtransmission</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />

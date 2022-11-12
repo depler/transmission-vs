@@ -4,6 +4,7 @@
 // License text can be found in the licenses/ folder.
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <condition_variable>
 #include <list>
@@ -21,8 +22,6 @@
 
 #include <curl/curl.h>
 
-#include <event2/buffer.h>
-
 #include <fmt/core.h>
 #include <fmt/format.h>
 
@@ -30,6 +29,7 @@
 #include "log.h"
 #include "peer-io.h"
 #include "tr-assert.h"
+#include "utils-ev.h"
 #include "utils.h"
 #include "web.h"
 
@@ -180,7 +180,7 @@ public:
     class Task
     {
     private:
-        tr_evbuffer_ptr const privbuf = tr_evbuffer_ptr{ evbuffer_new() };
+        libtransmission::evhelpers::evbuffer_unique_ptr privbuf{ evbuffer_new() };
         std::unique_ptr<CURL, void (*)(CURL*)> const easy_handle{ curl_easy_init(), curl_easy_cleanup };
         tr_web::FetchOptions options;
 
@@ -308,7 +308,7 @@ public:
         CloseNow // exit now even if tasks are running
     };
 
-    RunMode run_mode = RunMode::Run;
+    std::atomic<RunMode> run_mode = RunMode::Run;
 
     static size_t onDataReceived(void* data, size_t size, size_t nmemb, void* vtask)
     {
@@ -596,7 +596,7 @@ public:
 
     static std::once_flag curl_init_flag;
 
-    bool is_closed_ = false;
+    std::atomic<bool> is_closed_ = false;
 
     std::multimap<uint64_t /*tr_time_msec()*/, CURL*> paused_easy_handles;
 
