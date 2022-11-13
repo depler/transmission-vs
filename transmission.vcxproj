@@ -372,7 +372,6 @@
     <ClCompile Include="libtransmission\web.cc" />
     <ClCompile Include="libtransmission\webseed.cc" />
     <ClCompile Include="libtransmission\wildmat.c" />
-    <ClCompile Include="libutp\libutp_inet_ntop.cpp" />
     <ClCompile Include="libutp\utp_api.cpp" />
     <ClCompile Include="libutp\utp_callbacks.cpp" />
     <ClCompile Include="libutp\utp_hash.cpp" />
