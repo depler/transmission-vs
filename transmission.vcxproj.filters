@@ -933,7 +933,7 @@
     <ClCompile Include="libtransmission\inout.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\log.cc">
+    <ClCompile Include="libtransmission\log_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\magnet-metainfo.cc">
@@ -966,10 +966,10 @@
     <ClCompile Include="libtransmission\peer-msgs.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\platform.cc">
+    <ClCompile Include="libtransmission\platform_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\platform-quota.cc">
+    <ClCompile Include="libtransmission\platform-quota_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\port-forwarding.cc">

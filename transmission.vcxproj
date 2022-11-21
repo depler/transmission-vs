@@ -318,7 +318,7 @@
     <ClCompile Include="libtransmission\handshake.cc" />
     <ClCompile Include="libtransmission\inout.cc" />
     <ClCompile Include="libtransmission\jsonsl.c" />
-    <ClCompile Include="libtransmission\log.cc" />
+    <ClCompile Include="libtransmission\log_mod.cc" />
     <ClCompile Include="libtransmission\magnet-metainfo.cc" />
     <ClCompile Include="libtransmission\makemeta.cc" />
     <ClCompile Include="libtransmission\net.cc" />
@@ -329,8 +329,8 @@
     <ClCompile Include="libtransmission\peer-mgr.cc" />
     <ClCompile Include="libtransmission\peer-mse.cc" />
     <ClCompile Include="libtransmission\peer-msgs.cc" />
-    <ClCompile Include="libtransmission\platform-quota.cc" />
-    <ClCompile Include="libtransmission\platform.cc" />
+    <ClCompile Include="libtransmission\platform-quota_mod.cc" />
+    <ClCompile Include="libtransmission\platform_mod.cc" />
     <ClCompile Include="libtransmission\port-forwarding-natpmp.cc" />
     <ClCompile Include="libtransmission\port-forwarding-upnp.cc" />
     <ClCompile Include="libtransmission\port-forwarding.cc" />

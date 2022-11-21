@@ -23,10 +23,6 @@
 #include "tr-assert.h"
 #include "utils.h"
 
-#ifdef __ANDROID__
-#include <android/log.h>
-#endif
-
 using namespace std::literals;
 
 namespace
@@ -99,40 +95,6 @@ void logAddImpl(
 
     auto const lock = log_state.unique_lock();
 
-#if defined(__ANDROID__)
-
-    int prio;
-
-    switch (level)
-    {
-    case TR_LOG_CRITICAL:
-        prio = ANDROID_LOG_FATAL;
-        break;
-    case TR_LOG_ERROR:
-        prio = ANDROID_LOG_ERROR;
-        break;
-    case TR_LOG_WARN:
-        prio = ANDROID_LOG_WARN;
-        break;
-    case TR_LOG_INFO:
-        prio = ANDROID_LOG_INFO;
-        break;
-    case TR_LOG_DEBUG:
-        prio = ANDROID_LOG_DEBUG;
-        break;
-    case TR_LOG_TRACE:
-        prio = ANDROID_LOG_VERBOSE;
-    }
-
-#ifdef NDEBUG
-    auto const szmsg = fmt::format("{:s}", msg);
-#else
-    auto const szmsg = fmt::format("[{:s}:{:d}] {:s}", file, line, msg);
-#endif
-    __android_log_write(prio, "transmission", szmsg.c_str());
-
-#else
-
     if (tr_logGetQueueEnabled())
     {
         auto* const newmsg = new tr_log_message{};
@@ -174,7 +136,6 @@ void logAddImpl(
                                 fmt::format(FMT_STRING("[{:s}] {:s}"), std::data(timestr), msg));
         tr_sys_file_flush(fp);
     }
-#endif
 }
 
 } // unnamed namespace
