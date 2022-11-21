@@ -309,8 +309,7 @@
     <ClCompile Include="libtransmission\cache.cc" />
     <ClCompile Include="libtransmission\clients.cc" />
     <ClCompile Include="libtransmission\completion.cc" />
-    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc" />
-    <ClCompile Include="libtransmission\crypto-utils-fallback.cc" />
+    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc" />
     <ClCompile Include="libtransmission\crypto-utils.cc" />
     <ClCompile Include="libtransmission\error.cc" />
     <ClCompile Include="libtransmission\file-piece-map.cc" />
@@ -396,10 +395,14 @@
     <ClCompile Include="natpmp\natpmp.c" />
     <ClCompile Include="natpmp\wingettimeofday.c" />
     <ClCompile Include="dht\dht.c" />
+    <ClCompile Include="wolfssl_src\src\dtls.c" />
+    <ClCompile Include="wolfssl_src\src\dtls13.c" />
     <ClCompile Include="wolfssl_src\src\internal.c" />
     <ClCompile Include="wolfssl_src\src\keys.c" />
+    <ClCompile Include="wolfssl_src\src\ocsp.c" />
     <ClCompile Include="wolfssl_src\src\ssl.c" />
     <ClCompile Include="wolfssl_src\src\tls.c" />
+    <ClCompile Include="wolfssl_src\src\tls13.c" />
     <ClCompile Include="wolfssl_src\src\wolfio.c" />
     <ClCompile Include="wolfssl_src\wolfcrypt\src\aes.c" />
     <ClCompile Include="wolfssl_src\wolfcrypt\src\asn.c" />

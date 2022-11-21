@@ -852,9 +852,6 @@
     <ClCompile Include="curl\lib\noproxy.c">
       <Filter>curl</Filter>
     </ClCompile>
-    <ClCompile Include="libutp\libutp_inet_ntop.cpp">
-      <Filter>libutp</Filter>
-    </ClCompile>
     <ClCompile Include="libutp\utp_api.cpp">
       <Filter>libutp</Filter>
     </ClCompile>
@@ -915,10 +912,7 @@
     <ClCompile Include="libtransmission\crypto-utils.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-fallback.cc">
+    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\error.cc">
@@ -1094,6 +1088,18 @@
     </ClCompile>
     <ClCompile Include="libtransmission\session-thread.cc">
       <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="wolfssl_src\src\tls13.c">
+      <Filter>wolfssl</Filter>
+    </ClCompile>
+    <ClCompile Include="wolfssl_src\src\dtls.c">
+      <Filter>wolfssl</Filter>
+    </ClCompile>
+    <ClCompile Include="wolfssl_src\src\dtls13.c">
+      <Filter>wolfssl</Filter>
+    </ClCompile>
+    <ClCompile Include="wolfssl_src\src\ocsp.c">
+      <Filter>wolfssl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
