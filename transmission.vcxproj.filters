@@ -90,9 +90,6 @@
     <ClCompile Include="event2\bufferevent_filter.c">
       <Filter>event2</Filter>
     </ClCompile>
-    <ClCompile Include="event2\bufferevent_openssl.c">
-      <Filter>event2</Filter>
-    </ClCompile>
     <ClCompile Include="event2\bufferevent_pair.c">
       <Filter>event2</Filter>
     </ClCompile>
@@ -100,9 +97,6 @@
       <Filter>event2</Filter>
     </ClCompile>
     <ClCompile Include="event2\bufferevent_sock.c">
-      <Filter>event2</Filter>
-    </ClCompile>
-    <ClCompile Include="event2\devpoll.c">
       <Filter>event2</Filter>
     </ClCompile>
     <ClCompile Include="event2\evdns.c">
@@ -118,9 +112,6 @@
       <Filter>event2</Filter>
     </ClCompile>
     <ClCompile Include="event2\evmap.c">
-      <Filter>event2</Filter>
-    </ClCompile>
-    <ClCompile Include="event2\evport.c">
       <Filter>event2</Filter>
     </ClCompile>
     <ClCompile Include="event2\evrpc.c">
@@ -144,16 +135,7 @@
     <ClCompile Include="event2\http.c">
       <Filter>event2</Filter>
     </ClCompile>
-    <ClCompile Include="event2\kqueue.c">
-      <Filter>event2</Filter>
-    </ClCompile>
     <ClCompile Include="event2\listener.c">
-      <Filter>event2</Filter>
-    </ClCompile>
-    <ClCompile Include="event2\poll.c">
-      <Filter>event2</Filter>
-    </ClCompile>
-    <ClCompile Include="event2\select.c">
       <Filter>event2</Filter>
     </ClCompile>
     <ClCompile Include="event2\signal.c">
@@ -912,7 +894,7 @@
     <ClCompile Include="libtransmission\crypto-utils.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc">
+    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\error.cc">
@@ -933,7 +915,7 @@
     <ClCompile Include="libtransmission\inout.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\log_mod.cc">
+    <ClCompile Include="libtransmission\log.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\magnet-metainfo.cc">
@@ -966,10 +948,10 @@
     <ClCompile Include="libtransmission\peer-msgs.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\platform_mod.cc">
+    <ClCompile Include="libtransmission\platform.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\platform-quota_mod.cc">
+    <ClCompile Include="libtransmission\platform-quota.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\port-forwarding.cc">
