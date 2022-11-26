@@ -300,7 +300,7 @@
     <ClCompile Include="libtransmission\cache.cc" />
     <ClCompile Include="libtransmission\clients.cc" />
     <ClCompile Include="libtransmission\completion.cc" />
-    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc" />
+    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc" />
     <ClCompile Include="libtransmission\crypto-utils.cc" />
     <ClCompile Include="libtransmission\error.cc" />
     <ClCompile Include="libtransmission\file-piece-map.cc" />

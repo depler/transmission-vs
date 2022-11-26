@@ -894,7 +894,7 @@
     <ClCompile Include="libtransmission\crypto-utils.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-cyassl.cc">
+    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\error.cc">
