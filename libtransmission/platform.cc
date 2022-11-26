@@ -45,11 +45,6 @@
 
 using namespace std::literals;
 
-#ifdef __ANDROID__
-extern std::string tr_web_folder;
-extern std::string tr_session_folder;
-#endif
-
 /***
 ****  PATHS
 ***/
@@ -260,8 +255,7 @@ std::string tr_getWebClientDir([[maybe_unused]] tr_session const* session)
     {
         return std::string{ path };
     }
-#elif __ANDROID__
-    return tr_web_folder;
+
 #elif defined(_WIN32)
 
     /* Generally, Web interface should be stored in a Web subdir of
@@ -343,14 +337,16 @@ std::string tr_getWebClientDir([[maybe_unused]] tr_session const* session)
 
 std::string tr_getSessionIdDir()
 {
-#ifdef _WIN32
+#ifndef _WIN32
+
+    return std::string{ "/tmp"sv };
+
+#else
+
     auto const program_data_dir = win32_get_known_folder_ex(FOLDERID_ProgramData, KF_FLAG_CREATE);
     auto result = fmt::format("{:s}/Transmission"sv, program_data_dir);
     tr_sys_dir_create(result, 0, 0);
     return result;
-#elif __ANDROID__
-    return tr_session_folder;
-#else
-    return std::string{ "/tmp"sv };
+
 #endif
 }

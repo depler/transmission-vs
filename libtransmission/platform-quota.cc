@@ -9,23 +9,6 @@
 
 #include <event2/util.h> /* evutil_ascii_strcasecmp() */
 
-#ifdef __ANDROID__
-#define HAVE_GETMNTENT
-#define HAVE_STATVFS
-
-#define btodb(num) ((num) >> 10)
-
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <sys/quota.h>
-#include <sys/statvfs.h>
-
-int quotactl(int cmd, const char* special, int id, caddr_t addr)
-{
-    return syscall(SYS_quotactl, cmd, special, id, addr);
-}
-#endif
-
 #ifndef _WIN32
 #include <unistd.h> /* getuid() */
 #include <sys/types.h> /* types needed by quota.h */
