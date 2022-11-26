@@ -1,5 +1,5 @@
 # Transmission daemon for Windows
-This project is about building Transmission torrent daemon as a single binary without dependencies with Visual Studio.
+This project is about building Transmission torrent daemon for Windows as a single binary without dependencies. For Android version of this project see: https://github.com/depler/transmission-android.
 
 Current source code components:
 * Transmission (https://github.com/transmission/transmission): 4.00 (beta)
