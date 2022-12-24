@@ -55,6 +55,12 @@
     <Filter Include="wolfssl">
       <UniqueIdentifier>{ea15f202-6aa6-4c1b-bce1-cfb7f2973556}</UniqueIdentifier>
     </Filter>
+    <Filter Include="wildmat">
+      <UniqueIdentifier>{e0edb407-f2cd-4c1e-9dab-9db8c1ba3cec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="jsonsl">
+      <UniqueIdentifier>{f5f9039c-740f-4e74-a72a-5bfc779dc093}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="b64\cdecode.c">
@@ -852,12 +858,6 @@
     <ClCompile Include="libutp\utp_utils.cpp">
       <Filter>libutp</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\jsonsl.c">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
-    <ClCompile Include="libtransmission\wildmat.c">
-      <Filter>libtransmission</Filter>
-    </ClCompile>
     <ClCompile Include="libtransmission\announce-list.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
@@ -1088,6 +1088,15 @@
     </ClCompile>
     <ClCompile Include="curl\lib\idn.c">
       <Filter>curl</Filter>
+    </ClCompile>
+    <ClCompile Include="wildmat\wildmat.c">
+      <Filter>wildmat</Filter>
+    </ClCompile>
+    <ClCompile Include="..\transmission\third-party\jsonsl\jsonsl.c">
+      <Filter>jsonsl</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\peer-socket.cc">
+      <Filter>libtransmission</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2054,9 +2063,6 @@
     <ClInclude Include="libtransmission\interned-string.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
-    <ClInclude Include="libtransmission\jsonsl.h">
-      <Filter>libtransmission</Filter>
-    </ClInclude>
     <ClInclude Include="libtransmission\log.h">
       <Filter>libtransmission</Filter>
     </ClInclude>
@@ -2248,6 +2254,12 @@
     </ClInclude>
     <ClInclude Include="curl\lib\vtls\vtls_int.h">
       <Filter>curl</Filter>
+    </ClInclude>
+    <ClInclude Include="wildmat\wildmat.h">
+      <Filter>wildmat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\transmission\third-party\jsonsl\jsonsl.h">
+      <Filter>jsonsl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
