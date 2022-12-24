@@ -3,8 +3,8 @@ This project is about building Transmission torrent daemon for Windows as a sing
 
 Current source code components:
 * Transmission (https://github.com/transmission/transmission): 4.00 (beta)
-* WolfSSL (https://github.com/wolfSSL/wolfssl): 5.5.3
-* Curl (https://github.com/curl/curl): 7.86.0
+* WolfSSL (https://github.com/wolfSSL/wolfssl): 5.5.4
+* Curl (https://github.com/curl/curl): 7.87.0
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.13
 
