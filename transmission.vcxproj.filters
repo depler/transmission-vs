@@ -894,7 +894,7 @@
     <ClCompile Include="libtransmission\crypto-utils.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
-    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc">
+    <ClCompile Include="libtransmission\crypto-utils-wolfssl_mod.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\error.cc">
@@ -1096,6 +1096,9 @@
       <Filter>jsonsl</Filter>
     </ClCompile>
     <ClCompile Include="libtransmission\peer-socket.cc">
+      <Filter>libtransmission</Filter>
+    </ClCompile>
+    <ClCompile Include="libtransmission\utils-ev.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
   </ItemGroup>

@@ -6,27 +6,13 @@
 #include <memory>
 #include <mutex>
 
-#if defined(CYASSL_IS_WOLFSSL)
-// NOLINTBEGIN bugprone-macro-parentheses
-#define API_HEADER(x) <wolfssl/x>
-#define API_HEADER_CRYPT(x) API_HEADER(wolfcrypt/x)
-// NOLINTEND
-#define API(x) wc_##x
-#define API_VERSION_HEX LIBWOLFSSL_VERSION_HEX
-#else
-#define API_HEADER(x) <cyassl/x>
-#define API_HEADER_CRYPT(x) API_HEADER(ctaocrypt/x)
-#define API(x) x
-#define API_VERSION_HEX LIBCYASSL_VERSION_HEX
-#endif
-
-#include API_HEADER(options.h)
-#include API_HEADER_CRYPT(error-crypt.h)
-#include API_HEADER_CRYPT(random.h)
-#include API_HEADER_CRYPT(sha.h)
-#include API_HEADER_CRYPT(sha256.h)
-#include API_HEADER(version.h)
-#include API_HEADER(ssl.h)
+#include <wolfssl/options.h>
+#include <wolfssl/wolfcrypt/error-crypt.h>
+#include <wolfssl/wolfcrypt/random.h>
+#include <wolfssl/wolfcrypt/sha.h>
+#include <wolfssl/wolfcrypt/sha256.h>
+#include <wolfssl/version.h>
+#include <wolfssl/ssl.h>
 
 #include <fmt/core.h>
 
@@ -44,67 +30,74 @@ using TR_WC_RNG = RNG;
 
 tr_x509_store_t tr_ssl_get_x509_store(tr_ssl_ctx_t handle)
 {
-    wolfSSL_CTX_load_system_CA_certs((WOLFSSL_CTX*)handle);
-    return nullptr;
+    if (handle == nullptr)
+    {
+        return nullptr;
+    }
+
+    return SSL_CTX_get_cert_store(static_cast<SSL_CTX const*>(handle));
 }
 
 bool tr_x509_store_add(tr_x509_store_t handle, tr_x509_cert_t cert)
 {
-    return false;
+    TR_ASSERT(handle != nullptr);
+    TR_ASSERT(cert != nullptr);
+
+    return X509_STORE_add_cert(static_cast<X509_STORE*>(handle), static_cast<X509*>(cert));
 }
 
 tr_x509_cert_t tr_x509_cert_new(void const* der, size_t der_length)
 {
-    return nullptr;
+    TR_ASSERT(der != nullptr);
+
+    X509* const ret = d2i_X509(nullptr, (unsigned char const**)&der, der_length);
+
+    return ret;
 }
 
 void tr_x509_cert_free(tr_x509_cert_t handle)
 {
+    if (handle == nullptr)
+    {
+        return;
+    }
 
+    X509_free(static_cast<X509*>(handle));
 }
 
 /***
 ****
 ***/
 
-static void log_cyassl_error(int error_code, char const* file, int line)
+static void log_wolfssl_error(int error_code, char const* file, int line)
 {
     if (tr_logLevelIsActive(TR_LOG_ERROR))
     {
-#if API_VERSION_HEX >= 0x03004000
-        char const* error_message = API(GetErrorString)(error_code);
-#elif API_VERSION_HEX >= 0x03000002
-        char const* error_message = CTaoCryptGetErrorString(error_code);
-#else
-        char error_message[CYASSL_MAX_ERROR_SZ] = {};
-        CTaoCryptErrorString(error_code, error_message);
-#endif
-
         tr_logAddMessage(
             file,
             line,
             TR_LOG_ERROR,
             fmt::format(
                 _("{crypto_library} error: {error} ({error_code})"),
-                fmt::arg("crypto_library", "CyaSSL/WolfSSL"),
-                fmt::arg("error", error_message),
+                fmt::arg("crypto_library", "WolfSSL"),
+                fmt::arg("error", wc_GetErrorString(error_code)),
                 fmt::arg("error_code", error_code)));
     }
 }
 
-static bool check_cyassl_result(int result, char const* file, int line)
+static bool check_wolfssl_result(int result, char const* file, int line)
 {
     bool const ret = result == 0;
 
     if (!ret)
     {
-        log_cyassl_error(result, file, line);
+        log_wolfssl_error(result, file, line);
     }
 
     return ret;
 }
 
-#define check_result(result) check_cyassl_result((result), __FILE__, __LINE__)
+#define check_result(result) check_wolfssl_result((result), __FILE__, __LINE__)
 
 /***
 ****
@@ -117,7 +110,7 @@ static TR_WC_RNG* get_rng()
 
     if (!rng_initialized)
     {
-        if (!check_result(API(InitRng)(&rng)))
+        if (!check_result(wc_InitRng(&rng)))
         {
             return nullptr;
         }
@@ -149,27 +142,27 @@ public:
 
     void clear() override
     {
-        API(InitSha)(&handle_);
+        wc_InitSha(&handle_);
     }
 
     void add(void const* data, size_t data_length) override
     {
         if (data_length > 0U)
         {
-            API(ShaUpdate)(&handle_, static_cast<byte const*>(data), data_length);
+            wc_ShaUpdate(&handle_, static_cast<byte const*>(data), data_length);
         }
     }
 
     [[nodiscard]] tr_sha1_digest_t finish() override
     {
         auto digest = tr_sha1_digest_t{};
-        API(ShaFinal)(&handle_, reinterpret_cast<byte*>(std::data(digest)));
+        wc_ShaFinal(&handle_, reinterpret_cast<byte*>(std::data(digest)));
         clear();
         return digest;
     }
 
 private:
-    API(Sha) handle_ = {};
+    wc_Sha handle_ = {};
 };
 
 class Sha256Impl final : public tr_sha256
@@ -184,27 +177,27 @@ public:
 
     void clear() override
     {
-        API(InitSha256)(&handle_);
+        wc_InitSha256(&handle_);
     }
 
     void add(void const* data, size_t data_length) override
     {
         if (data_length > 0U)
         {
-            API(Sha256Update)(&handle_, static_cast<byte const*>(data), data_length);
+            wc_Sha256Update(&handle_, static_cast<byte const*>(data), data_length);
         }
     }
 
     [[nodiscard]] tr_sha256_digest_t finish() override
     {
         auto digest = tr_sha256_digest_t{};
-        API(Sha256Final)(&handle_, reinterpret_cast<byte*>(std::data(digest)));
+        wc_Sha256Final(&handle_, reinterpret_cast<byte*>(std::data(digest)));
         clear();
         return digest;
     }
 
 private:
-    API(Sha256) handle_ = {};
+    wc_Sha256 handle_ = {};
 };
 
 } // namespace
@@ -233,5 +226,5 @@ bool tr_rand_buffer_crypto(void* buffer, size_t length)
     TR_ASSERT(buffer != nullptr);
 
     auto const lock = std::lock_guard(rng_mutex_);
-    return check_result(API(RNG_GenerateBlock)(get_rng(), static_cast<byte*>(buffer), length));
+    return check_result(wc_RNG_GenerateBlock(get_rng(), static_cast<byte*>(buffer), length));
 }

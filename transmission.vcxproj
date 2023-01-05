@@ -68,7 +68,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>crypt32.lib;shlwapi.lib;wldap32.lib;ws2_32.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>c:\Data\XSoft\Transmission\daemon_debug\transmission.exe</OutputFile>
+      <OutputFile>d:\XSoft\Transmission\daemon_debug\transmission.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -303,7 +303,7 @@
     <ClCompile Include="libtransmission\cache.cc" />
     <ClCompile Include="libtransmission\clients.cc" />
     <ClCompile Include="libtransmission\completion.cc" />
-    <ClCompile Include="libtransmission\crypto-utils-cyassl_mod.cc" />
+    <ClCompile Include="libtransmission\crypto-utils-wolfssl_mod.cc" />
     <ClCompile Include="libtransmission\crypto-utils.cc" />
     <ClCompile Include="libtransmission\error.cc" />
     <ClCompile Include="libtransmission\file-piece-map.cc" />
@@ -352,6 +352,7 @@
     <ClCompile Include="libtransmission\tr-lpd.cc" />
     <ClCompile Include="libtransmission\tr-udp.cc" />
     <ClCompile Include="libtransmission\tr-utp.cc" />
+    <ClCompile Include="libtransmission\utils-ev.cc" />
     <ClCompile Include="libtransmission\utils.cc" />
     <ClCompile Include="libtransmission\variant-benc.cc" />
     <ClCompile Include="libtransmission\variant-converters.cc" />
