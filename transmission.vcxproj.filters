@@ -2285,6 +2285,9 @@
     <ClInclude Include="libdeflate\lib\matchfinder_common.h">
       <Filter>libdeflate</Filter>
     </ClInclude>
+    <ClInclude Include="libpsl\suffixes_dafsa.h">
+      <Filter>libpsl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="transmission.rc" />
