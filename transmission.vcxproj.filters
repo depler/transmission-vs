@@ -258,24 +258,6 @@
     <ClCompile Include="libpsl\lookup_string_in_fixed_set.c">
       <Filter>libpsl</Filter>
     </ClCompile>
-    <ClCompile Include="libdeflate\lib\crc32.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
-    <ClCompile Include="libdeflate\lib\deflate_compress.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
-    <ClCompile Include="libdeflate\lib\deflate_decompress.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
-    <ClCompile Include="libdeflate\lib\gzip_compress.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
-    <ClCompile Include="libdeflate\lib\gzip_decompress.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
-    <ClCompile Include="libdeflate\lib\utils.c">
-      <Filter>libdeflate</Filter>
-    </ClCompile>
     <ClCompile Include="fmt\format.cc">
       <Filter>fmt</Filter>
     </ClCompile>
@@ -1101,6 +1083,27 @@
     <ClCompile Include="libtransmission\utils-ev.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
+    <ClCompile Include="libdeflate\lib\x86\cpu_features.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\crc32.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\deflate_compress.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\deflate_decompress.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\gzip_compress.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\gzip_decompress.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="libdeflate\lib\utils.c">
+      <Filter>libdeflate</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="b64\cdecode.h">
@@ -1426,39 +1429,6 @@
     </ClInclude>
     <ClInclude Include="fast_float\parse_number.h">
       <Filter>fast_float</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\bt_matchfinder.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\crc32_multipliers.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\crc32_tables.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\decompress_template.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\deflate_compress.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\deflate_constants.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\gzip_constants.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\hc_matchfinder.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\ht_matchfinder.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\lib_common.h">
-      <Filter>libdeflate</Filter>
-    </ClInclude>
-    <ClInclude Include="libdeflate\lib\matchfinder_common.h">
-      <Filter>libdeflate</Filter>
     </ClInclude>
     <ClInclude Include="fmt\core.h">
       <Filter>fmt</Filter>
@@ -2263,6 +2233,57 @@
     </ClInclude>
     <ClInclude Include="..\transmission\third-party\jsonsl\jsonsl.h">
       <Filter>jsonsl</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\x86\cpu_features.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\x86\crc32_impl.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\x86\crc32_pclmul_template.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\x86\decompress_impl.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\x86\matchfinder_impl.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\bt_matchfinder.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\cpu_features_common.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\crc32_multipliers.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\crc32_tables.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\decompress_template.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\deflate_compress.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\deflate_constants.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\gzip_constants.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\hc_matchfinder.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\ht_matchfinder.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\lib_common.h">
+      <Filter>libdeflate</Filter>
+    </ClInclude>
+    <ClInclude Include="libdeflate\lib\matchfinder_common.h">
+      <Filter>libdeflate</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

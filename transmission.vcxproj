@@ -290,6 +290,7 @@
     <ClCompile Include="libdeflate\lib\gzip_compress.c" />
     <ClCompile Include="libdeflate\lib\gzip_decompress.c" />
     <ClCompile Include="libdeflate\lib\utils.c" />
+    <ClCompile Include="libdeflate\lib\x86\cpu_features.c" />
     <ClCompile Include="libpsl\psl.c" />
     <ClCompile Include="libpsl\lookup_string_in_fixed_set.c" />
     <ClCompile Include="libtransmission\announce-list.cc" />
@@ -682,6 +683,7 @@
     <ClInclude Include="fmt\std.h" />
     <ClInclude Include="fmt\xchar.h" />
     <ClInclude Include="libdeflate\lib\bt_matchfinder.h" />
+    <ClInclude Include="libdeflate\lib\cpu_features_common.h" />
     <ClInclude Include="libdeflate\lib\crc32_multipliers.h" />
     <ClInclude Include="libdeflate\lib\crc32_tables.h" />
     <ClInclude Include="libdeflate\lib\decompress_template.h" />
@@ -692,6 +694,11 @@
     <ClInclude Include="libdeflate\lib\ht_matchfinder.h" />
     <ClInclude Include="libdeflate\lib\lib_common.h" />
     <ClInclude Include="libdeflate\lib\matchfinder_common.h" />
+    <ClInclude Include="libdeflate\lib\x86\cpu_features.h" />
+    <ClInclude Include="libdeflate\lib\x86\crc32_impl.h" />
+    <ClInclude Include="libdeflate\lib\x86\crc32_pclmul_template.h" />
+    <ClInclude Include="libdeflate\lib\x86\decompress_impl.h" />
+    <ClInclude Include="libdeflate\lib\x86\matchfinder_impl.h" />
     <ClInclude Include="libpsl\libpsl.h" />
     <ClInclude Include="libtransmission\announce-list.h" />
     <ClInclude Include="libtransmission\announcer-common.h" />
