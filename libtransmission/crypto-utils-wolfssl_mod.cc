@@ -65,9 +65,7 @@ void tr_x509_cert_free(tr_x509_cert_t handle)
     X509_free(static_cast<X509*>(handle));
 }
 
-/***
-****
-***/
+// ---
 
 static void log_wolfssl_error(int error_code, char const* file, int line)
 {
@@ -99,9 +97,7 @@ static bool check_wolfssl_result(int result, char const* file, int line)
 
 #define check_result(result) check_wolfssl_result((result), __FILE__, __LINE__)
 
-/***
-****
-***/
+// ---
 
 static TR_WC_RNG* get_rng()
 {
@@ -123,9 +119,7 @@ static TR_WC_RNG* get_rng()
 
 static std::mutex rng_mutex_;
 
-/***
-****
-***/
+// ---
 
 namespace
 {
@@ -212,9 +206,7 @@ std::unique_ptr<tr_sha256> tr_sha256::create()
     return std::make_unique<Sha256Impl>();
 }
 
-/***
-****
-***/
+// ---
 
 bool tr_rand_buffer_crypto(void* buffer, size_t length)
 {
