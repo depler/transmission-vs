@@ -91,7 +91,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\transmission\third-party\jsonsl\jsonsl.c" />
     <ClCompile Include="b64\cdecode.c" />
     <ClCompile Include="b64\cencode.c" />
     <ClCompile Include="curl\lib\altsvc.c" />
@@ -284,6 +283,7 @@
     <ClCompile Include="event2\win32select.c" />
     <ClCompile Include="fmt\format.cc" />
     <ClCompile Include="fmt\os.cc" />
+    <ClCompile Include="jsonsl\jsonsl.c" />
     <ClCompile Include="libdeflate\lib\crc32.c" />
     <ClCompile Include="libdeflate\lib\deflate_compress.c" />
     <ClCompile Include="libdeflate\lib\deflate_decompress.c" />
@@ -443,7 +443,6 @@
     <ClCompile Include="zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\transmission\third-party\jsonsl\jsonsl.h" />
     <ClInclude Include="b64\ccommon.h" />
     <ClInclude Include="b64\cdecode.h" />
     <ClInclude Include="b64\cencode.h" />
@@ -682,6 +681,7 @@
     <ClInclude Include="fmt\ranges.h" />
     <ClInclude Include="fmt\std.h" />
     <ClInclude Include="fmt\xchar.h" />
+    <ClInclude Include="jsonsl\jsonsl.h" />
     <ClInclude Include="libdeflate\lib\bt_matchfinder.h" />
     <ClInclude Include="libdeflate\lib\cpu_features_common.h" />
     <ClInclude Include="libdeflate\lib\crc32_multipliers.h" />

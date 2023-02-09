@@ -1074,9 +1074,6 @@
     <ClCompile Include="wildmat\wildmat.c">
       <Filter>wildmat</Filter>
     </ClCompile>
-    <ClCompile Include="..\transmission\third-party\jsonsl\jsonsl.c">
-      <Filter>jsonsl</Filter>
-    </ClCompile>
     <ClCompile Include="libtransmission\peer-socket.cc">
       <Filter>libtransmission</Filter>
     </ClCompile>
@@ -1103,6 +1100,9 @@
     </ClCompile>
     <ClCompile Include="libdeflate\lib\utils.c">
       <Filter>libdeflate</Filter>
+    </ClCompile>
+    <ClCompile Include="jsonsl\jsonsl.c">
+      <Filter>jsonsl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2231,9 +2231,6 @@
     <ClInclude Include="wildmat\wildmat.h">
       <Filter>wildmat</Filter>
     </ClInclude>
-    <ClInclude Include="..\transmission\third-party\jsonsl\jsonsl.h">
-      <Filter>jsonsl</Filter>
-    </ClInclude>
     <ClInclude Include="libdeflate\lib\x86\cpu_features.h">
       <Filter>libdeflate</Filter>
     </ClInclude>
@@ -2287,6 +2284,9 @@
     </ClInclude>
     <ClInclude Include="libpsl\suffixes_dafsa.h">
       <Filter>libpsl</Filter>
+    </ClInclude>
+    <ClInclude Include="jsonsl\jsonsl.h">
+      <Filter>jsonsl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
