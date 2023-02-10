@@ -26,9 +26,9 @@ Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/s
 
 # Run
 Download latest **Transmission.zip** from releases, unpack it somewhere and run one of the following with administrator rights:
-* run_foreground.bat: run transmission in console mode (without service installation)
-* daemon_create.bat: create windows service for transmission
-* daemon_start.bat: start windows service for transmission
-* daemon_stop.bat: stop windows service for transmission
-* daemon_delete.bat: delete windows service for transmission
-* desktop_shortcut.bat: create desktop shortcut for transgui.exe
+* **run_foreground.bat**: run transmission in console mode (without service installation)
+* **daemon_create.bat**: create windows service for transmission
+* **daemon_start.bat**: start windows service for transmission
+* **daemon_stop.bat**: stop windows service for transmission
+* **daemon_delete.bat**: delete windows service for transmission
+* **desktop_shortcut.bat**: create desktop shortcut for transgui.exe
