@@ -2,7 +2,7 @@
 This project is about building Transmission torrent daemon for Windows as a single binary without dependencies. For Android version of this project see: https://github.com/depler/transmission-android.
 
 Current source code components:
-* Transmission (https://github.com/transmission/transmission): 4.00 (beta)
+* Transmission (https://github.com/transmission/transmission): 4.00
 * WolfSSL (https://github.com/wolfSSL/wolfssl): 5.5.4
 * Curl (https://github.com/curl/curl): 7.87.0
 * Event2 (https://github.com/libevent/libevent): 2.1.12
@@ -26,9 +26,9 @@ Pay attention to file `[Transmission]\daemon\settings.json`. Probably you want/s
 
 # Run
 Download latest **Transmission.zip** from releases, unpack it somewhere and run one of the following with administrator rights:
-* run_foreground.bat: run transmission in console mode (without service installation)
-* daemon_create.bat: create windows service for transmission
-* daemon_start.bat: start windows service for transmission
-* daemon_stop.bat: stop windows service for transmission
-* daemon_delete.bat: delete windows service for transmission
-* desktop_shortcut.bat: create desktop shortcut for transgui.exe
+* **run_foreground.bat**: run transmission in console mode (without service installation)
+* **daemon_create.bat**: create windows service for transmission
+* **daemon_start.bat**: start windows service for transmission
+* **daemon_stop.bat**: stop windows service for transmission
+* **daemon_delete.bat**: delete windows service for transmission
+* **desktop_shortcut.bat**: create desktop shortcut for transgui.exe
