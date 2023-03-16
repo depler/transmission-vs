@@ -2,14 +2,14 @@
 This project is about building Transmission torrent daemon for Windows as a single binary without dependencies. For Android version of this project see: https://github.com/depler/transmission-android.
 
 Current source code components:
-* Transmission (https://github.com/transmission/transmission): 4.0.1
+* Transmission (https://github.com/transmission/transmission): 4.0.2
 * WolfSSL (https://github.com/wolfSSL/wolfssl): 5.5.4
 * Curl (https://github.com/curl/curl): 7.88.1
 * Event2 (https://github.com/libevent/libevent): 2.1.12
 * Zlib (https://github.com/madler/zlib): 1.2.13
 
 Releases contains additional binaries (besides transmission itself):
-* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.7.1
+* Transmissionic Web UI (https://github.com/6c65726f79/Transmissionic): 1.8.0
 * Transmission Remote GUI (https://github.com/transmission-remote-gui/transgui): 5.18.0
 
 Binary dependencies: none. Compatible with Windows Vista and newer.
