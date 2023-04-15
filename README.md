@@ -2,7 +2,7 @@
 This project is about building Transmission torrent daemon for Windows as a single binary without dependencies. For Android version of this project see: https://github.com/depler/transmission-android.
 
 Current source code components:
-* Transmission (https://github.com/transmission/transmission): 4.0.2
+* Transmission (https://github.com/transmission/transmission): 4.0.3
 * WolfSSL (https://github.com/wolfSSL/wolfssl): 5.6.0
 * Curl (https://github.com/curl/curl): 8.0.1
 * Event2 (https://github.com/libevent/libevent): 2.1.12
