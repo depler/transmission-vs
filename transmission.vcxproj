@@ -100,7 +100,7 @@
     <ClCompile Include="curl\lib\base64.c" />
     <ClCompile Include="curl\lib\bufref.c" />
     <ClCompile Include="curl\lib\c-hyper.c" />
-    <ClCompile Include="curl\lib\cf-http.c" />
+    <ClCompile Include="curl\lib\cf-https-connect.c" />
     <ClCompile Include="curl\lib\cf-socket.c" />
     <ClCompile Include="curl\lib\cfilters.c" />
     <ClCompile Include="curl\lib\conncache.c" />
@@ -251,7 +251,6 @@
     <ClCompile Include="curl\lib\vtls\wolfssl.c" />
     <ClCompile Include="curl\lib\vtls\x509asn1.c" />
     <ClCompile Include="curl\lib\warnless.c" />
-    <ClCompile Include="curl\lib\wildcard.c" />
     <ClCompile Include="curl\lib\ws.c" />
     <ClCompile Include="daemon\daemon-win32.cc" />
     <ClCompile Include="daemon\daemon.cc" />
@@ -469,7 +468,7 @@
     <ClInclude Include="curl\lib\asyn.h" />
     <ClInclude Include="curl\lib\bufref.h" />
     <ClInclude Include="curl\lib\c-hyper.h" />
-    <ClInclude Include="curl\lib\cf-http.h" />
+    <ClInclude Include="curl\lib\cf-https-connect.h" />
     <ClInclude Include="curl\lib\cf-socket.h" />
     <ClInclude Include="curl\lib\cfilters.h" />
     <ClInclude Include="curl\lib\config-win32.h" />
@@ -613,7 +612,6 @@
     <ClInclude Include="curl\lib\vtls\wolfssl.h" />
     <ClInclude Include="curl\lib\vtls\x509asn1.h" />
     <ClInclude Include="curl\lib\warnless.h" />
-    <ClInclude Include="curl\lib\wildcard.h" />
     <ClInclude Include="curl\lib\ws.h" />
     <ClInclude Include="daemon\daemon.h" />
     <ClInclude Include="event2\buffer.h" />
